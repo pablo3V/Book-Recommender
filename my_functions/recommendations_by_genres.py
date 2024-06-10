@@ -1,3 +1,7 @@
+import pandas as pd
+
+
+
 ###########################################################################################
 #                                                                                         #
 #                                 contains_all_genres                                     #
@@ -47,7 +51,7 @@ def contains_any_genre(row, genres):
 #                                                                                         #
 ###########################################################################################
   
-def books_satisfying_genres(data, genres, exclude=[], combine=False): 
+def books_satisfying_genres(data, books_genres, genres, exclude=[], combine=False): 
     
     data = pd.merge(data, books_genres[['BookID','Genre_1', 'Genre_2', 'Genre_3', 'Genre_4', 'Genre_5', 'Genre_6', 'Genre_7']], on='BookID', how='left')
 

@@ -1,3 +1,9 @@
+import pandas as pd
+from scipy.sparse import csr_matrix
+from sklearn.neighbors import NearestNeighbors
+
+
+
 ########################################################################################
 #                                                                                      #
 #                                user_dictionary_to_df                                 #
@@ -6,7 +12,7 @@
 #                                                                                      #
 ########################################################################################
 
-def user_dictionary_to_df(user_dict, target_user):
+def user_dictionary_to_df(user_dict, target_user, books, ratings):
     # Convert the target_user dictionary to a dataframe with the required columns
     target_user_ratings = pd.DataFrame(user_dict.items(), columns=['Title', 'Rating'])
     target_user_ratings = pd.merge(target_user_ratings, books[['Title', 'BookID']], on='Title', how='left').drop('Title', axis=1)
@@ -19,9 +25,7 @@ def user_dictionary_to_df(user_dict, target_user):
 
     return data
 
-def hola():
-    print('hola')
-    return
+
 
 ########################################################################################
 #                                                                                      #
