@@ -54,6 +54,7 @@ default_number_neighbours = 50
 
 # Create a dash application
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
+server = app.server
 
 
 ###############################################################################

@@ -33,4 +33,6 @@ gcloud app deploy
 
 7. Verify the deployment: Once the deployment has finished, you should be able to access your Dash application through the url given by the GCP.
 
+Note: Use this command 'gcloud app logs tail -s default' to see the possible errors after running 'gcloud app deploy'.
 
+Note: scikit-learn was giving me problems when running gcloud app deploy. I solved the issue by installing the library directly in the Google Cloud terminal through pip3 install -U scikit-learn.
