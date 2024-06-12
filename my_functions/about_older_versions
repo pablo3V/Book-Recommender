@@ -1,0 +1,272 @@
+In order to maximize the efficiency of the program, we use the following function to determine whether it is better or not the use of one function against other:
+
+import time
+import resource
+
+def measure_memory_and_time(func, *args, **kwargs):
+    start_time = time.time()
+    start_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    
+    func(*args, **kwargs)
+    
+    end_time = time.time()
+    end_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    
+    elapsed_time = end_time - start_time
+    mem_usage = end_mem - start_mem
+    
+    return elapsed_time, mem_usage
+    
+elapsed_time, mem_usage = measure_memory_and_time("your_function_name", "arguments")
+
+print(f"Time passed: {elapsed_time} seconds")
+print(f"Maximum use of memory: {mem_usage} bytes")
+
+
+
+
+COMPARISONS:
+
+##################################################
+#                                                #
+# 1. Function books_satisfying_genres:           #
+#                                                #
+##################################################
+
+- Older version:
+
+def contains_all_genres(row, genres):
+    return all(any(row[f'Genre_{i}'] == genre for i in range(1, 8)) for genre in genres)
+
+def contains_any_genre(row, genres):
+    return any(row[f'Genre_{i}'] in genres for i in range(1, 8))
+    
+def books_satisfying_genres(data, books_genres, genres, exclude=[], combine=False): 
+    
+    data = pd.merge(data, books_genres[['BookID','Genre_1', 'Genre_2', 'Genre_3', 'Genre_4', 'Genre_5', 'Genre_6', 'Genre_7']], on='BookID', how='left')
+
+    if len(genres) == 0: # Case with no genres specified
+        data = data
+    else:
+        if combine: # If the user wants the books to include all the genres specified
+            if len(genres) <= 7:
+                data = data[data.apply(lambda row: contains_all_genres(row, genres), axis=1)]
+            else:
+                print('Books can have, at most, 7 different genres. If you want book recommendations including all the selected genres simultaneously, please, choose a maximum of 7 options.')
+                return
+        else: # If the user wants the books to include at least one of the genres specified
+            data = data[data.apply(lambda row: contains_any_genre(row, genres), axis=1)]
+
+    # To drop the books with, at leat, one of its genres in the list exclude
+    data = data[~data.apply(lambda row: contains_any_genre(row, exclude), axis=1)]
+
+    return data # This dataframe contains the genres of the books 
+    
+    
+- Newer version:
+
+def books_satisfying_genres(data, books_genres, genres, exclude=[], combine=False): 
+    
+    merged_data = pd.merge(data, books_genres[['BookID', 'Genres', 'Genre_1', 'Genre_2', 'Genre_3', 'Genre_4', 'Genre_5', 'Genre_6', 'Genre_7']], on='BookID', how='left')
+
+    if genres: # Case with any genre specified
+        if combine: # If the user wants the books to include all the genres specified
+            if len(genres) <= 7:
+                genres_set = set(genres)
+                mask = [genres_set.issubset(set(row)) for row in merged_data['Genres']]
+                merged_data = merged_data[mask]
+            else:
+                print('Books can have, at most, 7 different genres. If you want book recommendations including all the selected genres simultaneously, please, choose a maximum of 7 options.')
+                return
+        else:
+            # Check if any genre is present in any 'Genres' column
+            genre_mask = np.logical_or.reduce([merged_data[f'Genre_{i}'].isin(genres) for i in range(1, 8)])
+            merged_data = merged_data[genre_mask]
+
+    # To drop the books with, at leat, one of its genres in the list exclude
+    if exclude:
+        # Exclude rows with any excluded genre
+        exclude_mask = np.logical_not(np.logical_or.reduce([merged_data[f'Genre_{i}'].isin(exclude) for i in range(1, 8)]))
+        merged_data = merged_data[exclude_mask]
+
+    return merged_data # This dataframe contains the genres of the books 
+    
+    
+Making use of the measure_memory_and_time function, one can see that the newer version is more than 10 times faster. One should always try to avoid using lambda functions through .apply(), since this is usually slower.
+
+
+
+##################################################
+#                                                #
+# 2. Function get_users_matrix:                  #
+#                                                #
+##################################################
+
+- Older version:
+
+def get_users_matrix(ratings):
+    # Creating the matrix with users and books
+    ratings_matrix = ratings[['UserID', 'BookID', 'Rating']].pivot(index = 'UserID', columns = 'BookID', values = 'Rating').fillna(0)
+    ratings_csr_matrix = csr_matrix(ratings_matrix.values)
+    # Normalize the csr matrix
+    ratings_csr_matrix_norm = get_csr_matrix_norm(ratings_csr_matrix, method='min_max')
+    
+    return ratings_csr_matrix_norm, ratings_matrix
+    
+    
+- Newer version:
+
+def get_users_matrix(ratings):
+    # Creating the matrix with users and books
+    ratings_matrix = ratings[['UserID', 'BookID', 'Rating']].pivot(index = 'UserID', columns = 'BookID', values = 'Rating').fillna(0)
+    ratings_csr_matrix = csr_matrix(ratings_matrix.values)
+    # Normalize the csr matrix
+    ratings_csr_matrix_norm = get_csr_matrix_norm(ratings_csr_matrix, method='min_max')
+
+    users = list(ratings_matrix.index)
+    
+    return ratings_csr_matrix_norm, users
+    
+    
+The main difference is that we get rid of the ratings_matrix in DataFrame format. This df is huge and difficult to handle in terms of memory. In order to keep the track of the UserIDs of the CRS matrix, we define the list useres.
+
+
+
+##################################################
+#                                                #
+# 3. Function get_users_matrix:                  #
+#                                                #
+##################################################
+
+- Older version:
+
+def knn_model(csr_matrix, matrix, target_user, number_neighbours, ratings, exclude):
+    # Build the KNN model
+    model_knn = NearestNeighbors(metric = 'cosine', algorithm = 'brute')
+    model_knn.fit(csr_matrix)
+
+    # The row of the target user
+    query_index = matrix.index.get_loc(target_user) 
+
+    if matrix.shape[0] < (number_neighbours + 1):
+        number_neighbours = matrix.shape[0]
+        
+    distances, indices = model_knn.kneighbors(matrix.iloc[query_index,:].values.reshape(1, -1), n_neighbors = (number_neighbours+1))
+
+    # Most similar users
+    most_similar_users = [matrix.iloc[index].name for index in indices.flatten()[1:]]
+
+    # Ratings of the most similar users
+    similar_users_ratings = ratings[(ratings['UserID'].isin(most_similar_users)) & (~ratings['BookID'].isin(exclude))]
+
+    # Books that have been rated by at least 5 users.
+    count_ratings = similar_users_ratings.groupby('BookID').size()
+    count_ratings_df = pd.DataFrame(count_ratings, columns=['Ratings_Count']).reset_index()
+    #multirated_books = count_ratings[count_ratings >= 5].index
+
+    # Average rating for these books and sorted dataframe
+    #similar_users_ratings = similar_users_ratings[similar_users_ratings['BookID'].isin(multirated_books)]
+    #multirated_books_rating = pd.DataFrame(similar_users_ratings.groupby('BookID')['Rating'].mean(), columns=['Rating']).reset_index()
+    #multirated_books_rating.columns = ['BookID', 'Average_Rating']
+    #multirated_books_rating = multirated_books_rating.sort_values(by='Average_Rating', ascending=False).reset_index()[['BookID', 'Average_Rating']]
+
+    similar_books = pd.DataFrame(similar_users_ratings.groupby('BookID')['Rating'].mean()).reset_index()
+    similar_books.columns = ['BookID', 'Average_Rating']
+    similar_books = pd.merge(similar_books, count_ratings_df, on='BookID', how='left')
+
+    # In order to obtain a weighted rating for each book taking into account the number of votes a book has and its average rating, 
+    # I will use the "True Bayesian Estimate", used by IMDB 
+    # (https://stats.stackexchange.com/questions/6418/rating-system-taking-account-of-number-of-votes, 
+    #  https://github.com/wbotelhos/rating):
+
+    # Weighted rating (WR) = (v ÷ (v+m)) × R + (m ÷ (v+m)) × C 
+
+    # , where:
+
+    # - R = average for the book (mean)
+    # - v = number of votes for the book
+    # - m = minimum votes required to be listed in the top
+    # - C = the mean vote across the whole set of books
+
+    # For an intuitive explanation of the formula, take a look to [this link](https://stats.stackexchange.com/questions/189658/what-are-good-resources-on-bayesian-rating).
+
+    # WR = P(enough evidence) × (Rating based on evidence) + P(no evidence) × (best guess when no evidence)
+    
+    # Parameters for the "True Bayesian Estimate". We can chose several options for m.
+    R = similar_books['Average_Rating']
+    v = similar_books['Ratings_Count']
+    #m = similar_books['Ratings_Count'].mean()
+    m = similar_books['Ratings_Count'].quantile(0.9)
+    C = similar_users_ratings['Rating'].mean() # C is the mean of all the ratings, not the mean of the books' means
+
+    # Weighted Rating: "True Bayesian Estimate"
+    similar_books['Weighted_Rating'] = (v / (v + m)) * R + (m / (v + m)) * C
+
+    similar_books = similar_books.sort_values(by='Weighted_Rating', ascending=False).reset_index()
+    
+    return similar_books
+
+
+- Newr version:
+
+def knn_model(csr_matrix, users, target_user, number_neighbours, ratings, exclude):
+    # Build the KNN model
+    model_knn = NearestNeighbors(metric = 'cosine', algorithm = 'brute')
+    model_knn.fit(csr_matrix)
+
+    # Get the index of the target_user
+    target_user_index = users.index(target_user)
+
+    if len(users) < (number_neighbours + 1):
+        number_neighbours = len(users)
+
+    # Look for the closest neighbours of the target_user
+    distances, indices = model_knn.kneighbors(csr_matrix[target_user_index], n_neighbors=(number_neighbours + 1))
+
+    # Most similar users
+    most_similar_users_indices = indices.flatten()[1:]
+
+    # Get the UserIDs corresponding to the numerical indices
+    most_similar_users = [users[i] for i in most_similar_users_indices]
+
+    # Ratings of the most similar users
+    similar_users_ratings = ratings[(ratings['UserID'].isin(most_similar_users)) & (~ratings['BookID'].isin(exclude))]
+
+    # Compute the weighted rating for each book
+    similar_books = similar_users_ratings.groupby('BookID')['Rating'].agg(['mean', 'count']).reset_index()
+    similar_books.columns = ['BookID', 'Average_Rating', 'Ratings_Count']
+
+    # In order to obtain a weighted rating for each book taking into account the number of votes a book has and its average rating, 
+    # I will use the "True Bayesian Estimate", used by IMDB 
+    # (https://stats.stackexchange.com/questions/6418/rating-system-taking-account-of-number-of-votes, 
+    #  https://github.com/wbotelhos/rating):
+
+    # Weighted rating (WR) = (v ÷ (v+m)) × R + (m ÷ (v+m)) × C 
+
+    # , where:
+
+    # - R = average for the book (mean)
+    # - v = number of votes for the book
+    # - m = minimum votes required to be listed in the top
+    # - C = the mean vote across the whole set of books
+
+    # For an intuitive explanation of the formula, take a look to [this link](https://stats.stackexchange.com/questions/189658/what-are-good-resources-on-bayesian-rating).
+
+    # WR = P(enough evidence) × (Rating based on evidence) + P(no evidence) × (best guess when no evidence)
+    
+    # Parameters for the "True Bayesian Estimate". We can chose several options for m.
+    R = similar_books['Average_Rating']
+    v = similar_books['Ratings_Count']
+    #m = similar_books['Ratings_Count'].mean()
+    m = similar_books['Ratings_Count'].quantile(0.9)
+    C = similar_users_ratings['Rating'].mean() # C is the mean of all the ratings, not the mean of the books' means
+
+    # Weighted Rating: "True Bayesian Estimate"
+    similar_books['Weighted_Rating'] = (v / (v + m)) * R + (m / (v + m)) * C
+
+    similar_books = similar_books.sort_values(by='Weighted_Rating', ascending=False).reset_index()
+    
+    return similar_books
+    
+    
+The difference between version is that we only use the ratings matrix in CSV format.

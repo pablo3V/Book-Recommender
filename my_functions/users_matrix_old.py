@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.neighbors import NearestNeighbors
 
@@ -13,7 +12,7 @@ from sklearn.neighbors import NearestNeighbors
 #                                                                                      #
 ########################################################################################
 
-def user_dictionary_to_df(user_dict, target_user, books, ratings):
+def user_dictionary_to_df_v0(user_dict, target_user, books, ratings):
     # Convert the target_user dictionary to a dataframe with the required columns
     target_user_ratings = pd.DataFrame(user_dict.items(), columns=['Title', 'Rating'])
     target_user_ratings = pd.merge(target_user_ratings, books[['Title', 'BookID']], on='Title', how='left').drop('Title', axis=1)
@@ -38,7 +37,7 @@ def user_dictionary_to_df(user_dict, target_user, books, ratings):
 #                                                                                      #
 ########################################################################################
 
-def selected_users_df(ratings_df, target_books, n_max, target_user):
+def selected_users_df_v0(ratings_df, target_books, n_max, target_user):
     # Users who have rated at least 1 of the items rated by the current user
     selected_users = ratings_df[ratings_df['BookID'].isin(target_books)]
     selected_users = pd.DataFrame(selected_users.groupby('UserID').size(), columns=['Coincidences']).sort_values(by='Coincidences', ascending=False).reset_index()
@@ -80,16 +79,14 @@ def selected_users_df(ratings_df, target_books, n_max, target_user):
 #                                                                                      #
 ########################################################################################
 
-def get_users_matrix(ratings):
+def get_users_matrix_v0(ratings):
     # Creating the matrix with users and books
     ratings_matrix = ratings[['UserID', 'BookID', 'Rating']].pivot(index = 'UserID', columns = 'BookID', values = 'Rating').fillna(0)
     ratings_csr_matrix = csr_matrix(ratings_matrix.values)
     # Normalize the csr matrix
     ratings_csr_matrix_norm = get_csr_matrix_norm(ratings_csr_matrix, method='min_max')
-
-    users = list(ratings_matrix.index)
     
-    return ratings_csr_matrix_norm, users
+    return ratings_csr_matrix_norm, ratings_matrix
 
 
 
@@ -104,32 +101,39 @@ def get_users_matrix(ratings):
 
 
 
-def knn_model(csr_matrix, users, target_user, number_neighbours, ratings, exclude):
+def knn_model_v0(csr_matrix, matrix, target_user, number_neighbours, ratings, exclude):
     # Build the KNN model
     model_knn = NearestNeighbors(metric = 'cosine', algorithm = 'brute')
     model_knn.fit(csr_matrix)
 
-    # Get the index of the target_user
-    target_user_index = users.index(target_user)
+    # The row of the target user
+    query_index = matrix.index.get_loc(target_user) 
 
-    if len(users) < (number_neighbours + 1):
-        number_neighbours = len(users)
-
-    # Look for the closest neighbours of the target_user
-    distances, indices = model_knn.kneighbors(csr_matrix[target_user_index], n_neighbors=(number_neighbours + 1))
+    if matrix.shape[0] < (number_neighbours + 1):
+        number_neighbours = matrix.shape[0]
+        
+    distances, indices = model_knn.kneighbors(matrix.iloc[query_index,:].values.reshape(1, -1), n_neighbors = (number_neighbours+1))
 
     # Most similar users
-    most_similar_users_indices = indices.flatten()[1:]
-
-    # Get the UserIDs corresponding to the numerical indices
-    most_similar_users = [users[i] for i in most_similar_users_indices]
+    most_similar_users = [matrix.iloc[index].name for index in indices.flatten()[1:]]
 
     # Ratings of the most similar users
     similar_users_ratings = ratings[(ratings['UserID'].isin(most_similar_users)) & (~ratings['BookID'].isin(exclude))]
 
-    # Compute the weighted rating for each book
-    similar_books = similar_users_ratings.groupby('BookID')['Rating'].agg(['mean', 'count']).reset_index()
-    similar_books.columns = ['BookID', 'Average_Rating', 'Ratings_Count']
+    # Books that have been rated by at least 5 users.
+    count_ratings = similar_users_ratings.groupby('BookID').size()
+    count_ratings_df = pd.DataFrame(count_ratings, columns=['Ratings_Count']).reset_index()
+    #multirated_books = count_ratings[count_ratings >= 5].index
+
+    # Average rating for these books and sorted dataframe
+    #similar_users_ratings = similar_users_ratings[similar_users_ratings['BookID'].isin(multirated_books)]
+    #multirated_books_rating = pd.DataFrame(similar_users_ratings.groupby('BookID')['Rating'].mean(), columns=['Rating']).reset_index()
+    #multirated_books_rating.columns = ['BookID', 'Average_Rating']
+    #multirated_books_rating = multirated_books_rating.sort_values(by='Average_Rating', ascending=False).reset_index()[['BookID', 'Average_Rating']]
+
+    similar_books = pd.DataFrame(similar_users_ratings.groupby('BookID')['Rating'].mean()).reset_index()
+    similar_books.columns = ['BookID', 'Average_Rating']
+    similar_books = pd.merge(similar_books, count_ratings_df, on='BookID', how='left')
 
     # In order to obtain a weighted rating for each book taking into account the number of votes a book has and its average rating, 
     # I will use the "True Bayesian Estimate", used by IMDB 
@@ -174,7 +178,7 @@ def knn_model(csr_matrix, users, target_user, number_neighbours, ratings, exclud
 #                                                                                      #
 ########################################################################################
 
-def get_csr_matrix_norm(csr_matrix, method='mean_centering'):
+def get_csr_matrix_norm_v0(csr_matrix, method='mean_centering'):
     csr_matrix_norm = csr_matrix.copy()
 
     for i in range(csr_matrix.shape[0]):

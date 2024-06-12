@@ -1,41 +1,5 @@
 import pandas as pd
-
-
-
-###########################################################################################
-#                                                                                         #
-#                                 contains_all_genres                                     #
-#                                                                                         #
-# Function to check if all the specified genres in a given list are present in any        #
-# of the genre columns of the DataFrame row.                                              #
-#                                                                                         #
-# The any function returns True if the current genre is found in any of the               #
-#   7 genre columns.                                                                      #
-# The all function ensures that this condition (any returning True) holds for             #
-#   every genre in the genres list.                                                       #
-#                                                                                         #
-###########################################################################################
-
-def contains_all_genres(row, genres):
-    return all(any(row[f'Genre_{i}'] == genre for i in range(1, 8)) for genre in genres)
-    
-    
-    
-###########################################################################################
-#                                                                                         #
-#                                 contains_any_genre                                      #
-#                                                                                         #
-# Function to check if any the specified genres in a given list are present in any        #
-# of the genre columns of the DataFrame row.                                              #
-#                                                                                         #
-# The any function returns True if at least one genre from the genres list is found       #
-# in any of the 7 genre columns of the row.                                               #
-#                                                                                         #
-###########################################################################################
-
-def contains_any_genre(row, genres):
-    return any(row[f'Genre_{i}'] in genres for i in range(1, 8))
-    
+import numpy as np
     
     
 ###########################################################################################
@@ -50,27 +14,32 @@ def contains_any_genre(row, genres):
 # combine = if True, look for books that have all the genres                              #
 #                                                                                         #
 ###########################################################################################
-  
+
 def books_satisfying_genres(data, books_genres, genres, exclude=[], combine=False): 
     
-    data = pd.merge(data, books_genres[['BookID','Genre_1', 'Genre_2', 'Genre_3', 'Genre_4', 'Genre_5', 'Genre_6', 'Genre_7']], on='BookID', how='left')
+    merged_data = pd.merge(data, books_genres[['BookID', 'Genres', 'Genre_1', 'Genre_2', 'Genre_3', 'Genre_4', 'Genre_5', 'Genre_6', 'Genre_7']], on='BookID', how='left')
 
-    if len(genres) == 0: # Case with no genres specified
-        data = data
-    else:
+    if genres: # Case with any genre specified
         if combine: # If the user wants the books to include all the genres specified
             if len(genres) <= 7:
-                data = data[data.apply(lambda row: contains_all_genres(row, genres), axis=1)]
+                genres_set = set(genres)
+                mask = [genres_set.issubset(set(row)) for row in merged_data['Genres']]
+                merged_data = merged_data[mask]
             else:
                 print('Books can have, at most, 7 different genres. If you want book recommendations including all the selected genres simultaneously, please, choose a maximum of 7 options.')
                 return
-        else: # If the user wants the books to include at least one of the genres specified
-            data = data[data.apply(lambda row: contains_any_genre(row, genres), axis=1)]
+        else:
+            # Check if any genre is present in any 'Genres' column
+            genre_mask = np.logical_or.reduce([merged_data[f'Genre_{i}'].isin(genres) for i in range(1, 8)])
+            merged_data = merged_data[genre_mask]
 
     # To drop the books with, at leat, one of its genres in the list exclude
-    data = data[~data.apply(lambda row: contains_any_genre(row, exclude), axis=1)]
+    if exclude:
+        # Exclude rows with any excluded genre
+        exclude_mask = np.logical_not(np.logical_or.reduce([merged_data[f'Genre_{i}'].isin(exclude) for i in range(1, 8)]))
+        merged_data = merged_data[exclude_mask]
 
-    return data # This dataframe contains the genres of the books 
+    return merged_data # This dataframe contains the genres of the books 
     
     
     

@@ -15,24 +15,34 @@ Note: Instead of using the files tags and book_tags, I did web scrapping to get 
 
 
 
-## Dash application using Google Cloud Platform
+## Dash application using Heraku
 
-1. Create a Google Cloud Platform account: You can do it through this url: https://cloud.google.com/
-2. Create a new project: Once you are logged in, go to 'Console' and create a new project.
-3. Install the Google Cloud SDK: Follow the steps from this url: https://cloud.google.com/sdk/docs/install-sdk?hl=es-419#deb
-4. Configure the project locally: Ensure the Dash app is ready to be displayed.
-5. Configure the application for the App Engine: Create the file 'app.yaml' in the root directory of the project. This file specifies how the application will execute in App Engine. A basic example for the file is shown here:
+1. Prepare the Dash application: Make sure the Dash application is ready to be deployed. Test locally to ensure it works correctly.
 
-runtime: python39
-instance_class: F1
-entrypoint: gunicorn -b :$PORT app:server
+2. Create an account on Heroku.
 
-6. Deploy your application in App Engine: Use the Google Cloud SDK to deploy your application in App Engine. From the directory of the project, run in the terminal:
+3. Install the Heroku CLI: Follow the instruction from https://devcenter.heroku.com/articles/heroku-cli to download and install the Heroku Command Line Interface (CLI). This allows you to deploy your application from the command line.
 
-gcloud app deploy
+4. Log in to Heroku from the command line: Open a terminal and run the command 
 
-7. Verify the deployment: Once the deployment has finished, you should be able to access your Dash application through the url given by the GCP.
+heroku login
 
-Note: Use this command 'gcloud app logs tail -s default' to see the possible errors after running 'gcloud app deploy'.
+5. Create a new Heroku application: Create a new application on Heroku using the following command:
 
-Note: scikit-learn was giving me problems when running gcloud app deploy. I solved the issue by installing the library directly in the Google Cloud terminal through pip3 install -U scikit-learn.
+heroku create your-app-name
+
+6. Configure the GitHub deployment: Configure automatic deployment from your GitHub repository. You can do this from the "Deploy" tab in your Heroku application's dashboard. Connect your GitHub account and select the repository containing your Dash application.
+
+7. Select the deployment branch: In the deployment configuration on Heroku, choose the branch of your repository that you want to deploy (usually main or master).
+
+8. Set up the requirements.txt file: Ensure you have a requirements.txt file in the root of your project listing all dependencies of your Dash application. This tells Heroku what Python packages need to be installed.
+
+9. Set up the Procfile file: Create a file named Procfile in the root of your project (if you don't have one already) and make sure it contains a line specifying how to run your Dash application. For example:
+
+web: gunicorn app:server
+
+10. Initial deployment: Once everything is set up, push your code to Heroku using the following command:
+
+git push heroku main
+
+11. View your application URL: After the deployment is complete, you can find the URL of your deployed Dash application in the Heroku dashboard under your application's settings.

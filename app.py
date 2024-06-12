@@ -39,8 +39,8 @@ ratings_dfs = [pd.read_csv(file) for file in ratings_files]
 ratings = pd.concat(ratings_dfs, ignore_index=True).drop('Unnamed: 0', axis = 1)
 
 books_genres = pd.read_csv("data/Books_genres_cleaned.csv").drop('Unnamed: 0', axis = 1)
+books_genres['Genres'] = books_genres['Genres'].apply(ast.literal_eval)
 books_genres_list = pd.read_csv("data/Books_genres_list_cleaned.csv").drop('Unnamed: 0', axis = 1)
-
 
 
 # Dash application
@@ -54,7 +54,6 @@ default_number_neighbours = 50
 
 # Create a dash application
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
-server = app.server
 
 
 ###############################################################################
@@ -384,13 +383,11 @@ def update_intermediate_state(app_state, rating_store):
         selected_users, selected_ratings = selected_users_df(ratings_new, target_books, n_users_upper_limit, target_UserID)
 
         # Creating the matrix with users and books
-        ratings_csr_matrix, ratings_matrix = get_users_matrix(selected_ratings)
+        ratings_csr_matrix, users = get_users_matrix(selected_ratings)
 
         # Get the potential recommendations
-        potential_recommendations = knn_model(ratings_csr_matrix, ratings_matrix, target_UserID, default_number_neighbours, selected_ratings, target_books)
-                                           
-        del ratings_matrix
-    
+        potential_recommendations = knn_model(ratings_csr_matrix, users, target_UserID, default_number_neighbours, selected_ratings, target_books)
+                                        
         potential_recommendations_json = potential_recommendations.to_json(orient='split')
 
         # Save the table of potential recommendations
@@ -456,8 +453,9 @@ def get_genres_to_include(app_state, pot_recom_json, selected_included_genres, s
         included_genres = [genre for genre in selected_included_genres]
 
     # Keep only the books that do not have the excluded genres
-    pot_recom = pot_recom[~pot_recom.apply(lambda row: contains_any_genre(row, excluded_genres), axis=1)]
-
+    exclude_mask = np.logical_not(np.logical_or.reduce([pot_recom[f'Genre_{i}'].isin(excluded_genres) for i in range(1, 8)]))
+    pot_recom = pot_recom
+    
     # If the state of the buttons has just changed, initialize the selected included genres
     if button_state['have_they_changed'] == True:
         included_genres = []
@@ -466,7 +464,7 @@ def get_genres_to_include(app_state, pot_recom_json, selected_included_genres, s
 
     # List with all the lists of genres of the potential recommendations. The array is also converted to a list
     lists_genres = pot_recom[['Genres']].values
-    lists_genres = [ast.literal_eval(item[0]) for item in lists_genres]
+    lists_genres = [item[0] for item in lists_genres]
     
     # The list for the dropdown depends on the genre buttons selection
     if button_state['include_all_genres'] == True:
@@ -510,6 +508,7 @@ def get_genres_to_include(app_state, pot_recom_json, selected_included_genres, s
     return options_include, included_genres, options_exclude, excluded_genres, button_state
 
 
+# Callback to update the state of the all/any genres button
 @app.callback(
     [Output('genre_button_state', 'data'),
      Output('include_all_genres', 'style'),
@@ -564,8 +563,6 @@ def get_the_final_recommendations(app_state, pot_recom_json, selected_genres, ex
 
     # Potential book recommendation
     pot_recom = pd.read_json(StringIO(pot_recom_json), orient='split')
-    # Include the genres lists in the dataframe
-    pot_recom = pd.merge(pot_recom, books_genres[['BookID', 'Genres']], on='BookID', how='left')
 
     # Filter the potential recommendations by the selected genres
     if button_state['include_all_genres'] == True:
@@ -574,7 +571,7 @@ def get_the_final_recommendations(app_state, pot_recom_json, selected_genres, ex
         combine = False
     recommendations = books_satisfying_genres(pot_recom, books_genres, included_genres, excluded_genres, combine=combine)
     recommendations = pd.merge(recommendations, books[['BookID', 'Title', 'Image_url']], on='BookID', how='left')
-
+    
     # Number of recommendations
     n = 10
     recommendations = recommendations.head(n)
