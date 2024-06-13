@@ -15,34 +15,44 @@ Note: Instead of using the files tags and book_tags, I did web scrapping to get 
 
 
 
-## Dash application using Heraku
+## Dash application using Google Cloud Platform (GCP)
 
-1. Prepare the Dash application: Make sure the Dash application is ready to be deployed. Test locally to ensure it works correctly.
+I followed the steps indicated here: https://datasciencecampus.github.io/deploy-dash-with-gcp/
 
-2. Create an account on Heroku.
+To sum up:
 
-3. Install the Heroku CLI: Follow the instruction from https://devcenter.heroku.com/articles/heroku-cli to download and install the Heroku Command Line Interface (CLI). This allows you to deploy your application from the command line.
+1. Create your Dash Application: Once the application runs locally, make sure that you have the following files in the directory:
 
-4. Log in to Heroku from the command line: Open a terminal and run the command 
+- main.py: the Dash application
+- app.yaml: used to run the Dash app on GCP using gunicorn
+- requirements.txt: includes all the packages needed to run the Dash app (make sure to include gunicorn)
 
-heroku login
+2. Make a Project on Google Cloud Platform: Create a new project.
 
-5. Create a new Heroku application: Create a new application on Heroku using the following command:
+3. Make yourself the owner of the project: This can be done from 'Project info' -> 'Add people to this project'
 
-heroku create your-app-name
+4. Install gcloud: Follow the indications here: https://cloud.google.com/sdk/docs/install-sdk?hl=es-419
 
-6. Configure the GitHub deployment: Configure automatic deployment from your GitHub repository. You can do this from the "Deploy" tab in your Heroku application's dashboard. Connect your GitHub account and select the repository containing your Dash application.
+5. Deploy your Application using gcloud command line tool: In the directory where you have cloned your github repository, run the command:
 
-7. Select the deployment branch: In the deployment configuration on Heroku, choose the branch of your repository that you want to deploy (usually main or master).
+gcloud config get-value project
 
-8. Set up the requirements.txt file: Ensure you have a requirements.txt file in the root of your project listing all dependencies of your Dash application. This tells Heroku what Python packages need to be installed.
+to check which project is active in gcloud. You can change the project with the command:
 
-9. Set up the Procfile file: Create a file named Procfile in the root of your project (if you don't have one already) and make sure it contains a line specifying how to run your Dash application. For example:
+gcloud config set project project-id
 
-web: gunicorn app:server
+Finally, deploy the app:
 
-10. Initial deployment: Once everything is set up, push your code to Heroku using the following command:
+gcloud app deploy
 
-git push heroku main
+Note: I had the problem stated here: https://stackoverflow.com/questions/64274811/gcloud-app-deploy-error-response-13-failed-to-create-cloud-build-invalid-buc
 
-11. View your application URL: After the deployment is complete, you can find the URL of your deployed Dash application in the Heroku dashboard under your application's settings.
+Once it is solved, run the command again.
+
+6. You can acces the url of your application via:
+
+gcloud app browse
+
+In my case, it is:
+
+https://book-recommendations-dash.ew.r.appspot.com

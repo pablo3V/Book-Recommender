@@ -80,7 +80,37 @@ def selected_users_df(ratings_df, target_books, n_max, target_user):
 #                                                                                      #
 ########################################################################################
 
-def get_users_matrix(ratings):
+
+# The new version of the function takes into account only the books that the target user
+# has rated. 
+# In my opinion, what is really important is that the users have coincidences in the books 
+# the target user has rated, and I do not care about the other books. For example:
+# 
+# target user has rated N books with some ratings.
+# user_1 has rated the same N books with the same ratings, plus 1 additional book
+# user_2 has rated the same N books with the same ratings, plus 1000 additional books
+#
+# Obviously, the user_1 will be way closer to the target_user, according to the KNN algorithm,
+# than user_2, despite having the same ratings on the important N books. This is because the 
+# dimensionality of the space matters. 
+#
+# Then, I think it is better to consider the target_books, not only because computationally is
+# highle cheaper, but also because it makes more sense to me.
+
+def get_users_matrix(ratings, target_books):
+    # Creating the matrix with users and books
+    ratings = ratings[ratings['BookID'].isin(target_books)]
+    ratings_matrix = ratings[['UserID', 'BookID', 'Rating']].pivot(index = 'UserID', columns = 'BookID', values = 'Rating').fillna(0)
+    ratings_csr_matrix = csr_matrix(ratings_matrix.values)
+    # Normalize the csr matrix
+    ratings_csr_matrix_norm = get_csr_matrix_norm(ratings_csr_matrix, method='min_max')
+
+    users = list(ratings_matrix.index)
+    
+    return ratings_csr_matrix_norm, users
+  
+    
+def get_users_matrix_previous_version(ratings):
     # Creating the matrix with users and books
     ratings_matrix = ratings[['UserID', 'BookID', 'Rating']].pivot(index = 'UserID', columns = 'BookID', values = 'Rating').fillna(0)
     ratings_csr_matrix = csr_matrix(ratings_matrix.values)
@@ -127,9 +157,32 @@ def knn_model(csr_matrix, users, target_user, number_neighbours, ratings, exclud
     # Ratings of the most similar users
     similar_users_ratings = ratings[(ratings['UserID'].isin(most_similar_users)) & (~ratings['BookID'].isin(exclude))]
 
-    # Compute the weighted rating for each book
-    similar_books = similar_users_ratings.groupby('BookID')['Rating'].agg(['mean', 'count']).reset_index()
-    similar_books.columns = ['BookID', 'Average_Rating', 'Ratings_Count']
+    # Weights from the distances for the weighted average
+    alpha = 5.0
+    weights = [np.exp(- alpha * distance) for distance in distances.flatten()[1:]]
+    # Create a DataFrame for the weights
+    weights_df = pd.DataFrame({'UserID': most_similar_users, 'Weight': weights})
+    
+    
+    #print('Distances: ', distances.flatten()[1:])
+    #print('Weights: ', weights)
+    
+    
+    # Merge the weights with the ratings
+    weighted_ratings = similar_users_ratings.merge(weights_df, on='UserID')
+    # Calculate the weighted rating for each book
+    weighted_ratings['Weighted_Rating'] = weighted_ratings['Rating'] * weighted_ratings['Weight']
+
+    # Aggregate weighted ratings by book
+    book_weighted_avg = weighted_ratings.groupby('BookID').agg(
+        Weighted_Sum=('Weighted_Rating', 'sum'),
+        Weight_Sum=('Weight', 'sum'),
+        Ratings_Count=('Rating', 'count')
+    ).reset_index()
+
+    # Calculate the weighted average rating
+    book_weighted_avg['Weighted_Average_Rating'] = book_weighted_avg['Weighted_Sum'] / book_weighted_avg['Weight_Sum']
+    similar_books = book_weighted_avg.copy()
 
     # In order to obtain a weighted rating for each book taking into account the number of votes a book has and its average rating, 
     # I will use the "True Bayesian Estimate", used by IMDB 
@@ -150,11 +203,12 @@ def knn_model(csr_matrix, users, target_user, number_neighbours, ratings, exclud
     # WR = P(enough evidence) × (Rating based on evidence) + P(no evidence) × (best guess when no evidence)
     
     # Parameters for the "True Bayesian Estimate". We can chose several options for m.
-    R = similar_books['Average_Rating']
+    R = similar_books['Weighted_Average_Rating']
     v = similar_books['Ratings_Count']
     #m = similar_books['Ratings_Count'].mean()
     m = similar_books['Ratings_Count'].quantile(0.9)
-    C = similar_users_ratings['Rating'].mean() # C is the mean of all the ratings, not the mean of the books' means
+    C = weighted_ratings['Weighted_Rating'].sum() / weighted_ratings['Weight'].sum()
+    # C is the mean of all the ratings, not the mean of the books' means
 
     # Weighted Rating: "True Bayesian Estimate"
     similar_books['Weighted_Rating'] = (v / (v + m)) * R + (m / (v + m)) * C
