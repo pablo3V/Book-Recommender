@@ -367,10 +367,10 @@ books_genres_list = pd.read_csv("data/Books_genres_list_cleaned.csv").drop('Unna
 # Dash application
 
 # Maximum number of users with coincidences that we use
-n_users_upper_limit = 2000
+n_users_upper_limit = 1000
 
 # Number of neighbours
-default_number_neighbours = 1000
+default_number_neighbours = 500
 
 
 # Create a dash application
@@ -427,6 +427,7 @@ app.layout = html.Div([
             ],
             multi=True, # Allow multiple selection
             placeholder="Select books...",
+            className='dropdown-hide-selected',
             style={'display': 'block'} # Default style to display the dropdown
         ),
         html.Button("Save Ratings", id="save_ratings_button"),
@@ -499,6 +500,7 @@ app.layout = html.Div([
             id='text_no_recommendations', 
             style={'display': 'none'}
         ),
+        html.H2('Your recommendations:'),
         html.Div(id='recommended_books_container')
     ], id='final_recommendations', style={'display': 'none'})
 ])
@@ -624,6 +626,7 @@ def display_selected_books(selected_books, rating_store):
         for book_title in selected_books:
             book_row = books[books['Title'] == book_title].iloc[0]
             image_url = book_row['Image_url']
+            author = book_row['Authors']
             rating_value = rating_store.get(book_title, 1) if rating_store else 1 # 1 is the default (and minimum) rating
             rating = dash_grocery.Stars(
                 id={'type': 'rating', 'index': book_title}, 
@@ -632,8 +635,11 @@ def display_selected_books(selected_books, rating_store):
             book_info = html.Div([
                 html.Div([
                     html.Button('x', id={'type': 'remove_book_dropdown', 'index': book_title}, n_clicks=0, style={'margin-right': '10px'}),
-                    html.Img(src=image_url, style={'width': '50px', 'height': '75px', 'margin-top': '10px', 'margin-right': '20px'}),
-                    html.H3(book_title, style={'margin-right': '20px'}),
+                    html.Img(src=image_url, style={'width': '70px', 'height': '100px', 'margin-top': '10px', 'margin-right': '20px'}),
+                    html.Div([
+                        html.H3(book_title, style={'margin-right': '20px'}),
+                        html.H4(author, style={'margin-right': '20px'}),
+                    ]),
                     rating
                 ], style={'display': 'flex', 'align-items': 'center'}),
             ])
@@ -862,6 +868,17 @@ def get_genres_to_include(app_state, pot_recom_json, selected_included_genres, s
         if genre in exclude_list_for_dropdowns:
             exclude_list_for_dropdowns.remove(genre)
 
+    # Remove 'Empty' from the genres lists
+    empty = 'Empty'
+    if empty in include_list_for_dropdowns:
+        include_list_for_dropdowns.remove(empty)
+    if empty in exclude_list_for_dropdowns:
+        exclude_list_for_dropdowns.remove(empty)
+
+    # Sort the elements in the lists alphabetically
+    include_list_for_dropdowns.sort()
+    exclude_list_for_dropdowns.sort()
+
     # Options for the dropdowns
     options_include = [
         {'label': genre, 'value': genre} for genre in include_list_for_dropdowns
@@ -937,7 +954,7 @@ def get_the_final_recommendations(app_state, pot_recom_json, selected_genres, ex
     else:
         combine = False
     recommendations = books_satisfying_genres(pot_recom, books_genres, included_genres, excluded_genres, combine=combine)
-    recommendations = pd.merge(recommendations, books[['BookID', 'Title', 'Image_url']], on='BookID', how='left')
+    recommendations = pd.merge(recommendations, books[['BookID', 'Authors', 'ISBN', 'Title', 'Average_Rating', 'Image_url']], on='BookID', how='left')
     
     # Number of recommendations
     recommendations = recommendations.head(num_recom)
@@ -949,15 +966,28 @@ def get_the_final_recommendations(app_state, pot_recom_json, selected_genres, ex
 
     # Crear la lista de recomendaciones para mostrar en el contenedor
     recommendations_display = []
+    idx = 1
     for rec in recommendations_list:
         book_title = rec['Title']
+        author = rec['Authors']
+        isbn = rec['ISBN']
+        rating = rec['Average_Rating']
         book_image_url = rec['Image_url']
         recommendations_display.append(
             html.Div([
-                html.Img(src=book_image_url, style={'width': '50px', 'height': '75px', 'margin-right': '20px'}),
-                html.H4(book_title, style={'margin-right': '20px'})
-            ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px'})
+                html.H3(ordinal_number(idx) + ' recomendation:'),
+                html.Div([
+                    html.Img(src=book_image_url, style={'width': '93px', 'height': '130px', 'margin-right': '20px'}),
+                    html.Div([
+                        html.P(book_title, style={'fontSize': 18, "font-weight": "bold"}),
+                        html.P('Author: ' + author, style={'fontSize': 15}),
+                        html.P('Goodreads rating: ' + str(rating), style={'fontSize': 15}),
+                        html.P('ISBN: ' + isbn, style={'fontSize': 15}),
+                    ], style={'flex': '1', 'margin-bottom': '10px'}),
+                ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '10px', 'margin-left': '40px'})
+            ])
         )
+        idx += 1
 
     # Show or hide the 'No recommendations' message
     if len(recommendations_list) == 0:
