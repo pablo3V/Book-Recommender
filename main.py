@@ -1021,20 +1021,23 @@ def get_the_final_recommendations(app_state, pot_recom_json, selected_genres, ex
     [State('user_id_input', 'value')],
     prevent_initial_call=True
 )
-def load_ratings(n_clicks, user_id):
+def load_ratings_from_cloud(n_clicks, user_id):
     if n_clicks is None:
         raise dash.exceptions.PreventUpdate
 
     # Name of the file in Google Cloud Storage
     blob_name = f'user_ratings_{user_id}.json'
     
-    # Get the bucket
-    bucket = storage_client.bucket(bucket_name)
-    
-    # Create a new blob (file) in the bucket
-    blob = bucket.blob(blob_name)
-    
     try:
+        # Get the bucket
+        bucket = storage_client.bucket(bucket_name)
+    
+        # Create a new blob (file) in the bucket
+        blob = bucket.blob(blob_name)
+        
+        if not blob.exists():
+            raise ValueError(f"File '{blob_name}' does not exist in bucket '{bucket_name}'")
+        
         # Download file contents from GCS
         content = blob.download_as_string()
 
