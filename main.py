@@ -1013,33 +1013,33 @@ def get_the_final_recommendations(app_state, pot_recom_json, selected_genres, ex
     
    
 # Callback to store the users selections
-#@app.callback(
-#    Output('rating_store', 'data', allow_duplicate=True),
-#    [Input('save_ratings_button', 'n_clicks')],
-#    [State('user_id_input', 'value'), 
-#     State('rating_store', 'data')],
-#     prevent_initial_call=True
-#)
-#def save_ratings_in_cloud(n_clicks, user_id, rating_store):
-#    if n_clicks is None:
-#       raise dash.exceptions.PreventUpdate
+@app.callback(
+    Output('rating_store', 'data', allow_duplicate=True),
+    [Input('save_ratings_button', 'n_clicks')],
+    [State('user_id_input', 'value'), 
+     State('rating_store', 'data')],
+     prevent_initial_call=True
+)
+def save_ratings_in_cloud(n_clicks, user_id, rating_store):
+    if n_clicks is None:
+       raise dash.exceptions.PreventUpdate
 
-#    # Convert the user selection into a JSON file
-#    rating_store_json = json.dumps(rating_store)
+    # Convert the user selection into a JSON file
+    rating_store_json = json.dumps(rating_store)
 
-#    # Name of the file in Google Cloud Storage
-#    blob_name = f"user_ratings_{user_id}.json"
+    # Name of the file in Google Cloud Storage
+    blob_name = f"user_ratings_{user_id}.json"
 
-#    # Get the bucket
-#    bucket = storage_client.bucket(bucket_name)
+    # Get the bucket
+    bucket = storage_client.bucket(bucket_name)
 
-#    # Create a new blob (file) in the bucket
-#    blob = bucket.blob(blob_name)
+    # Create a new blob (file) in the bucket
+    blob = bucket.blob(blob_name)
 
-#    # Upload the JSON file to Google Cloud Storage
-#    blob.upload_from_string(rating_store_json)
+    # Upload the JSON file to Google Cloud Storage
+    blob.upload_from_string(rating_store_json)
 
-#    return rating_store
+    return rating_store
     
 
 if __name__ == '__main__':
