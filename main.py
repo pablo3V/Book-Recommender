@@ -370,7 +370,7 @@ books_genres_list = pd.read_csv("data/Books_genres_list_cleaned.csv").drop('Unna
 n_users_upper_limit = 1000
 
 # Number of neighbours
-default_number_neighbours = 500
+default_number_neighbours = 1000
 
 
 # Create a dash application
