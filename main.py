@@ -1030,22 +1030,19 @@ def load_ratings_from_cloud(n_clicks, user_id):
     
     try:
         # Get the bucket
-        bucket = storage_client.bucket(bucket_name)
+        bucket = storage_client.get_bucket(bucket_name)
     
         # Create a new blob (file) in the bucket
         blob = bucket.blob(blob_name)
         
-        if not blob.exists():
-            raise ValueError(f"File '{blob_name}' does not exist in bucket '{bucket_name}'")
-        
         # Download file contents from GCS
-        content = blob.download_as_string()
+        content = blob.download_as_string(client=None)
 
         # Decode and load JSON data
-        rating_data = json.loads(content.decode('utf-8'))
+        rating_data = json.loads(content)
 
         # Update rating_store with new data
-        rating_store.update(rating_data)
+        rating_store = rating_data
         selected_books = list(rating_store.keys())
         
         return rating_store, selected_books, {'display': 'none'}
