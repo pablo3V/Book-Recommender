@@ -716,21 +716,21 @@ def update_rating_store(rating_values, selected_books, rating_store):
 
 
 # Callback to save the user selection
-@app.callback(
-    Output('rating_store', 'data', allow_duplicate=True),
-    [Input('save_ratings_button', 'n_clicks')],
-    [State('user_id_input', 'value'), 
-     State('rating_store', 'data')],
-    prevent_initial_call=True
-)
-def save_ratings(n_clicks, user_id, rating_store):
-    if n_clicks is None:
-        raise dash.exceptions.PreventUpdate
+#@app.callback(
+#    Output('rating_store', 'data', allow_duplicate=True),
+#    [Input('save_ratings_button', 'n_clicks')],
+#    [State('user_id_input', 'value'), 
+#     State('rating_store', 'data')],
+#    prevent_initial_call=True
+#)
+#def save_ratings(n_clicks, user_id, rating_store):
+#    if n_clicks is None:
+#        raise dash.exceptions.PreventUpdate
 
-    user_file = f'user_files/user_ratings_{user_id}.json'
-    with open(user_file, 'w') as f:
-        json.dump(rating_store, f)
-    return rating_store
+#    user_file = f'user_files/user_ratings_{user_id}.json'
+#    with open(user_file, 'w') as f:
+#        json.dump(rating_store, f)
+#    return rating_store
 
 
 ###############################################################################
