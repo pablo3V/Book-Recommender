@@ -25,6 +25,8 @@ import dash_grocery
 
 import json
 
+from google.cloud import storage
+
 #######################################################################################################
 
 # Functions
@@ -371,6 +373,11 @@ n_users_upper_limit = 1000
 
 # Number of neighbours
 default_number_neighbours = 500
+
+# Create a client of Google Cloud Storage
+storage_client = storage.Client()
+# Name of the bucket of Google Cloud Storage to store the user files with their selection
+bucket_name = "user-files-bucket"
 
 
 # Create a dash application
@@ -996,7 +1003,44 @@ def get_the_final_recommendations(app_state, pot_recom_json, selected_genres, ex
         text_no_recommendations_style = {'display': 'none', 'fontSize': 20, 'color': 'red'}
 
     return recommendations_display, text_no_recommendations_style
+    
+    
+###############################################################################
+#                                                                             #
+#                          FOR GOOGLE CLOUD PLATFORM                          #
+#                                                                             #
+###############################################################################    
+    
+   
+# Callback to store the users selections
+@app.callback(
+    Output('rating_store', 'data', allow_duplicate=True),
+    [Input('save_ratings_button', 'n_clicks')],
+    [State('user_id_input', 'value'), 
+     State('rating_store', 'data')],
+     prevent_initial_call=True
+)
+def save_ratings_in_cloud(n_clicks, user_id, rating_store):
+    if n_clicks is None:
+       raise dash.exceptions.PreventUpdate
 
+    # Convert the user selection into a JSON file
+    rating_store_json = json.dumps(rating_store)
+
+    # Name of the file in Google Cloud Storage
+    blob_name = f"user_ratings_{user_id}.json"
+
+    # Get the bucket
+    bucket = storage_client.bucket(bucket_name)
+
+    # Create a new blob (file) in the bucket
+    blob = bucket.blob(blob_name)
+
+    # Upload the JSON file to Google Cloud Storage
+    blob.upload_from_string(rating_store_json)
+
+    return rating_store
+    
 
 if __name__ == '__main__':
     app.server(host='0.0.0.0', port=8080, debug=True)
