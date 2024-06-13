@@ -566,26 +566,26 @@ def update_app_state(n_clicks, app_state):
 
 
 # Callback to load a previous selection of a user
-@app.callback(
-    [Output('rating_store', 'data', allow_duplicate=True),
-     Output('dropdown_book_titles', 'value', allow_duplicate=True),
-     Output('nonexistent_userID', 'style')],
-    [Input('load_ratings_button', 'n_clicks')],
-    [State('user_id_input', 'value')],
-    prevent_initial_call=True
-)
-def load_ratings(n_clicks, user_id):
-    if n_clicks is None:
-        raise dash.exceptions.PreventUpdate
+#@app.callback(
+#    [Output('rating_store', 'data', allow_duplicate=True),
+#     Output('dropdown_book_titles', 'value', allow_duplicate=True),
+#     Output('nonexistent_userID', 'style')],
+#    [Input('load_ratings_button', 'n_clicks')],
+#    [State('user_id_input', 'value')],
+#    prevent_initial_call=True
+#)
+#def load_ratings(n_clicks, user_id):
+#    if n_clicks is None:
+#        raise dash.exceptions.PreventUpdate
 
-    user_file = f'user_files/user_ratings_{user_id}.json'
-    if os.path.exists(user_file):
-        with open(user_file, 'r') as f:
-            rating_store = json.load(f)
-        selected_books = list(rating_store.keys())
-        return rating_store, selected_books, {'display': 'none'}
-    else:
-        return {}, [], {'display': 'block', 'fontSize': 15, 'color': 'red'}
+#    user_file = f'user_files/user_ratings_{user_id}.json'
+#    if os.path.exists(user_file):
+#        with open(user_file, 'r') as f:
+#            rating_store = json.load(f)
+#        selected_books = list(rating_store.keys())
+#        return rating_store, selected_books, {'display': 'none'}
+#    else:
+#        return {}, [], {'display': 'block', 'fontSize': 15, 'color': 'red'}
 
 
 # Callback to update app state when finish button is clicked and to hide the "No book selected!" message
@@ -1010,7 +1010,45 @@ def get_the_final_recommendations(app_state, pot_recom_json, selected_genres, ex
 #                          FOR GOOGLE CLOUD PLATFORM                          #
 #                                                                             #
 ###############################################################################    
+  
+  
+# Callback to load a previous selection of a user
+@app.callback(
+    [Output('rating_store', 'data', allow_duplicate=True),
+     Output('dropdown_book_titles', 'value', allow_duplicate=True),
+     Output('nonexistent_userID', 'style')],
+    [Input('load_ratings_button', 'n_clicks')],
+    [State('user_id_input', 'value')],
+    prevent_initial_call=True
+)
+def load_ratings(n_clicks, user_id):
+    if n_clicks is None:
+        raise dash.exceptions.PreventUpdate
+
+    # Name of the file in Google Cloud Storage
+    blob_name = f'user_ratings_{user_id}.json'
     
+    # Get the bucket
+    bucket = storage_client.bucket(bucket_name)
+    
+    # Create a new blob (file) in the bucket
+    blob = bucket.blob(blob_name)
+    
+    try:
+        # Download file contents from GCS
+        content = blob.download_as_string()
+
+        # Decode and load JSON data
+        rating_data = json.loads(content.decode('utf-8'))
+
+        # Update rating_store with new data
+        rating_store.update(rating_data)
+        selected_books = list(rating_store.keys())
+        
+        return rating_store, selected_books, {'display': 'none'}
+    except Exception as e:
+        return {}, [], {'display': 'block', 'fontSize': 15, 'color': 'red'}
+          
    
 # Callback to store the users selections
 @app.callback(
