@@ -374,11 +374,6 @@ n_users_upper_limit = 1000
 # Number of neighbours
 default_number_neighbours = 500
 
-# Create a client of Google Cloud Storage
-storage_client = storage.Client()
-# Name of the bucket of Google Cloud Storage to store the user files with their selection
-bucket_name = "user-files-bucket"
-
 
 # Create a dash application
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
