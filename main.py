@@ -374,11 +374,6 @@ n_users_upper_limit = 1000
 # Number of neighbours
 default_number_neighbours = 500
 
-# Create a client of Google Cloud Storage
-storage_client = storage.Client()
-# Name of the bucket of Google Cloud Storage to store the user files with their selection
-bucket_name = "user-files-bucket"
-
 
 # Create a dash application
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
@@ -1029,6 +1024,11 @@ def load_ratings_from_cloud(n_clicks, user_id):
     blob_name = f'user_ratings_{user_id}.json'
     
     try:
+        # Create a client of Google Cloud Storage
+        storage_client = storage.Client()
+        # Name of the bucket of Google Cloud Storage to store the user files with their selection
+        bucket_name = "user-files-bucket"
+        
         # Get the bucket
         bucket = storage_client.get_bucket(bucket_name)
     
@@ -1061,6 +1061,11 @@ def load_ratings_from_cloud(n_clicks, user_id):
 def save_ratings_in_cloud(n_clicks, user_id, rating_store):
     if n_clicks is None:
        raise dash.exceptions.PreventUpdate
+       
+    # Create a client of Google Cloud Storage
+    storage_client = storage.Client()
+    # Name of the bucket of Google Cloud Storage to store the user files with their selection
+    bucket_name = "user-files-bucket"
 
     # Convert the user selection into a JSON file
     rating_store_json = json.dumps(rating_store)
