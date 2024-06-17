@@ -431,10 +431,10 @@ books_genres_list = pd.read_csv("data/Books_genres_list_cleaned.csv").drop('Unna
 # Dash application
 
 # Maximum number of users with coincidences that we use
-n_users_upper_limit = 500
+n_users_upper_limit = 2000
 
 # Number of neighbours
-default_number_neighbours = 100
+default_number_neighbours = 500
 
 
 # Create a dash application
@@ -827,10 +827,10 @@ def update_intermediate_state(app_state, rating_store):
         potential_recommendations = knn_model(ratings_csr_matrix, users, target_UserID, default_number_neighbours, selected_ratings, target_books)   
 
         # Recommend just the first volume of a saga or the following to the one the user has read
-        target_user_books = ratings_new[ratings_new['UserID'] == target_UserID]
-        target_user_books = pd.merge(target_user_books, books[['BookID', 'Title', 'Saga_Name', 'Saga_Volume']], on='BookID', how='left')
-        potential_recommendations = pd.merge(potential_recommendations, books[['BookID', 'Title', 'Saga_Name', 'Saga_Volume']], on='BookID', how='left')
-        potential_recommendations = update_recommendations(potential_recommendations, target_user_books, books)
+        #target_user_books = ratings_new[ratings_new['UserID'] == target_UserID]
+        #target_user_books = pd.merge(target_user_books, books[['BookID', 'Title', 'Saga_Name', 'Saga_Volume']], on='BookID', how='left')
+        #potential_recommendations = pd.merge(potential_recommendations, books[['BookID', 'Title', 'Saga_Name', 'Saga_Volume']], on='BookID', how='left')
+        #potential_recommendations = update_recommendations(potential_recommendations, target_user_books, books)
         
         potential_recommendations_json = potential_recommendations.to_json(orient='split')
     
