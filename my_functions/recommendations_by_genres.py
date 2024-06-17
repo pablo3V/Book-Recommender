@@ -57,3 +57,65 @@ def ordinal_number(number):
     else:
         sufix = {1: 'st', 2: 'nd', 3: 'rd'}.get(number % 10, 'th')
     return str(number) + sufix
+    
+    
+    
+###########################################################################################
+#                                                                                         #
+#                                  update_recommendations                                 #
+#                                                                                         #
+# Function to clean the recommendations.                                                  #
+# If there is a recommendation of a volume of a saga, we check if the user has read sny   #
+# volume. If so, we recommend the volume that follows inmediatedly the one that the user  #
+# has last read. If not, we recommend the first volume.                                   #
+#                                                                                         #
+########################################################################################### 
+
+def update_recommendations(recommendations, user_books, books):
+            
+    # Get the list of read sagas by the target user with the target user
+    user_sagas = user_books.dropna(subset=['Saga_Name'])
+
+    # Create a diccionary with the latest volume read of a saga
+    user_saga_volumes = user_sagas.groupby('Saga_Name')['Saga_Volume'].max().to_dict()
+
+    updated_recommendations = {'BookID': []}
+
+    for index, row in recommendations.iterrows():
+        saga_name = row['Saga_Name']
+        saga_volume = row['Saga_Volume']
+        bookid = row['BookID']
+
+        # If the book is not part of a saga, it is kept in the list of recommendations
+        if pd.isna(saga_name): # if saga_name = nan
+            updated_recommendations['BookID'].append(bookid)
+            continue
+            
+        # If the book is part of a saga, we verify the last volume read by the target_user
+        if saga_name in user_saga_volumes:
+            last_read_volume = user_saga_volumes[saga_name]
+
+            if saga_volume == last_read_volume + 1:
+                # If the volume is the following in the saga, the book is recommended
+                updated_recommendations['BookID'].append(bookid)
+
+            else:
+                # If not, the next volume is recommended
+                next_volume = last_read_volume + 1
+                next_volume = books[(books['Saga_Name'] == saga_name) & 
+                                    (books['Saga_Volume'] == next_volume)]['BookID'].values
+                if len(next_volume) > 0:
+                        updated_recommendations['BookID'].append(next_volume[0])
+
+        else:
+            # If the user has not read any volume of the saga, the first volume is recommended
+            first_volume = books[(books['Saga_Name'] == saga_name) & 
+                                 (books['Saga_Volume'] == 1)]['BookID'].values
+            if len(first_volume) > 0:
+                updated_recommendations['BookID'].append(first_volume[0])
+
+    # Create a new dataframe with the updated recommendations and the duplicates dropp
+    updated_recommendations_df = pd.DataFrame(updated_recommendations).drop_duplicates(subset=['BookID']).reset_index(drop=True)
+    
+    return updated_recommendations_df
+    

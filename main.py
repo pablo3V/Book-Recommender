@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import ast
 import itertools
+import re
 
 from scipy.sparse import csr_matrix
 from sklearn.neighbors import NearestNeighbors
@@ -86,6 +87,67 @@ def ordinal_number(number):
     else:
         sufix = {1: 'st', 2: 'nd', 3: 'rd'}.get(number % 10, 'th')
     return str(number) + sufix
+    
+    
+    
+###########################################################################################
+#                                                                                         #
+#                                  update_recommendations                                 #
+#                                                                                         #
+# Function to clean the recommendations.                                                  #
+# If there is a recommendation of a volume of a saga, we check if the user has read sny   #
+# volume. If so, we recommend the volume that follows inmediatedly the one that the user  #
+# has last read. If not, we recommend the first volume.                                   #
+#                                                                                         #
+########################################################################################### 
+
+def update_recommendations(recommendations, user_books, books):
+            
+    # Get the list of read sagas by the target user with the target user
+    user_sagas = user_books.dropna(subset=['Saga_Name'])
+
+    # Create a diccionary with the latest volume read of a saga
+    user_saga_volumes = user_sagas.groupby('Saga_Name')['Saga_Volume'].max().to_dict()
+
+    updated_recommendations = {'BookID': []}
+
+    for index, row in recommendations.iterrows():
+        saga_name = row['Saga_Name']
+        saga_volume = row['Saga_Volume']
+        bookid = row['BookID']
+
+        # If the book is not part of a saga, it is kept in the list of recommendations
+        if pd.isna(saga_name): # if saga_name = nan
+            updated_recommendations['BookID'].append(bookid)
+            continue
+            
+        # If the book is part of a saga, we verify the last volume read by the target_user
+        if saga_name in user_saga_volumes:
+            last_read_volume = user_saga_volumes[saga_name]
+
+            if saga_volume == last_read_volume + 1:
+                # If the volume is the following in the saga, the book is recommended
+                updated_recommendations['BookID'].append(bookid)
+
+            else:
+                # If not, the next volume is recommended
+                next_volume = last_read_volume + 1
+                next_volume = books[(books['Saga_Name'] == saga_name) & 
+                                    (books['Saga_Volume'] == next_volume)]['BookID'].values
+                if len(next_volume) > 0:
+                        updated_recommendations['BookID'].append(next_volume[0])
+
+        else:
+            # If the user has not read any volume of the saga, the first volume is recommended
+            first_volume = books[(books['Saga_Name'] == saga_name) & 
+                                 (books['Saga_Volume'] == 1)]['BookID'].values
+            if len(first_volume) > 0:
+                updated_recommendations['BookID'].append(first_volume[0])
+
+    # Create a new dataframe with the updated recommendations and the duplicates dropp
+    updated_recommendations_df = pd.DataFrame(updated_recommendations).drop_duplicates(subset=['BookID']).reset_index(drop=True)
+    
+    return updated_recommendations_df
     
     
 
@@ -561,26 +623,26 @@ def update_app_state(n_clicks, app_state):
 
 
 # Callback to load a previous selection of a user
-#@app.callback(
-#    [Output('rating_store', 'data', allow_duplicate=True),
-#     Output('dropdown_book_titles', 'value', allow_duplicate=True),
-#     Output('nonexistent_userID', 'style')],
-#    [Input('load_ratings_button', 'n_clicks')],
-#    [State('user_id_input', 'value')],
-#    prevent_initial_call=True
-#)
-#def load_ratings(n_clicks, user_id):
-#    if n_clicks is None:
-#        raise dash.exceptions.PreventUpdate
+@app.callback(
+    [Output('rating_store', 'data', allow_duplicate=True),
+     Output('dropdown_book_titles', 'value', allow_duplicate=True),
+     Output('nonexistent_userID', 'style')],
+    [Input('load_ratings_button', 'n_clicks')],
+    [State('user_id_input', 'value')],
+    prevent_initial_call=True
+)
+def load_ratings(n_clicks, user_id):
+    if n_clicks is None:
+        raise dash.exceptions.PreventUpdate
 
-#    user_file = f'user_files/user_ratings_{user_id}.json'
-#    if os.path.exists(user_file):
-#        with open(user_file, 'r') as f:
-#            rating_store = json.load(f)
-#        selected_books = list(rating_store.keys())
-#        return rating_store, selected_books, {'display': 'none'}
-#    else:
-#        return {}, [], {'display': 'block', 'fontSize': 15, 'color': 'red'}
+    user_file = f'user_files/user_ratings_{user_id}.json'
+    if os.path.exists(user_file):
+        with open(user_file, 'r') as f:
+            rating_store = json.load(f)
+        selected_books = list(rating_store.keys())
+        return rating_store, selected_books, {'display': 'none'}
+    else:
+        return {}, [], {'display': 'block', 'fontSize': 15, 'color': 'red'}
 
 
 # Callback to update app state when finish button is clicked and to hide the "No book selected!" message
@@ -704,8 +766,9 @@ def update_rating_store(rating_values, selected_books, rating_store):
         rating_store[book_title] = rating_value
 
     # Save the dictionary of selected books
-#    with open('rating_store.json', 'w') as f:
-#            json.dump(rating_store, f)
+    # aquí
+    with open('rating_store.json', 'w') as f:
+            json.dump(rating_store, f)
     
     return rating_store
 
@@ -762,12 +825,20 @@ def update_intermediate_state(app_state, rating_store):
 
         # Get the potential recommendations
         potential_recommendations = knn_model(ratings_csr_matrix, users, target_UserID, default_number_neighbours, selected_ratings, target_books)   
+
+        # Recommend just the first volume of a saga or the following to the one the user has read
+        target_user_books = ratings_new[ratings_new['UserID'] == target_UserID]
+        target_user_books = pd.merge(target_user_books, books[['BookID', 'Title', 'Saga_Name', 'Saga_Volume']], on='BookID', how='left')
+        potential_recommendations = pd.merge(potential_recommendations, books[['BookID', 'Title', 'Saga_Name', 'Saga_Volume']], on='BookID', how='left')
+        potential_recommendations = update_recommendations(potential_recommendations, target_user_books, books)
+        
         potential_recommendations_json = potential_recommendations.to_json(orient='split')
     
         # Save the table of potential recommendations
-#        potential_recommendations_list = potential_recommendations.to_dict(orient='records')
-#        with open('potential_recommendations.json', 'w') as f:
-#            json.dump(potential_recommendations_list, f)
+        # aquí
+        potential_recommendations_list = potential_recommendations.to_dict(orient='records')
+        with open('potential_recommendations.json', 'w') as f:
+            json.dump(potential_recommendations_list, f)
 
         # Update the state to indicate that the process has finished
         app_state['potential_recommendations_ongoing'] = False
@@ -962,9 +1033,10 @@ def get_the_final_recommendations(app_state, pot_recom_json, selected_genres, ex
     recommendations = recommendations.head(num_recom)
     
     # Save the table of potential recommendations
+    # aquí
     recommendations_list = recommendations.to_dict(orient='records')
-#    with open('recommendations.json', 'w') as f:
-#        json.dump(recommendations_list, f)
+    with open('recommendations.json', 'w') as f:
+        json.dump(recommendations_list, f)
 
     # Crear la lista de recomendaciones para mostrar en el contenedor
     recommendations_display = []
@@ -1008,81 +1080,81 @@ def get_the_final_recommendations(app_state, pot_recom_json, selected_genres, ex
   
   
 # Callback to load a previous selection of a user
-@app.callback(
-    [Output('rating_store', 'data', allow_duplicate=True),
-     Output('dropdown_book_titles', 'value', allow_duplicate=True),
-     Output('nonexistent_userID', 'style')],
-    [Input('load_ratings_button', 'n_clicks')],
-    [State('user_id_input', 'value')],
-    prevent_initial_call=True
-)
-def load_ratings_from_cloud(n_clicks, user_id):
-    if n_clicks is None:
-        raise dash.exceptions.PreventUpdate
+#@app.callback(
+#    [Output('rating_store', 'data', allow_duplicate=True),
+#     Output('dropdown_book_titles', 'value', allow_duplicate=True),
+#     Output('nonexistent_userID', 'style')],
+#    [Input('load_ratings_button', 'n_clicks')],
+#    [State('user_id_input', 'value')],
+#    prevent_initial_call=True
+#)
+#def load_ratings_from_cloud(n_clicks, user_id):
+#    if n_clicks is None:
+#        raise dash.exceptions.PreventUpdate
 
     # Name of the file in Google Cloud Storage
-    blob_name = f'user_ratings_{user_id}.json'
+#    blob_name = f'user_ratings_{user_id}.json'
     
-    try:
+#    try:
         # Create a client of Google Cloud Storage
-        storage_client = storage.Client()
+#        storage_client = storage.Client()
         # Name of the bucket of Google Cloud Storage to store the user files with their selection
-        bucket_name = "user-files-bucket"
+#        bucket_name = "user-files-bucket"
         
         # Get the bucket
-        bucket = storage_client.get_bucket(bucket_name)
+#        bucket = storage_client.get_bucket(bucket_name)
     
         # Create a new blob (file) in the bucket
-        blob = bucket.blob(blob_name)
+#        blob = bucket.blob(blob_name)
         
         # Download file contents from GCS
-        content = blob.download_as_string(client=None)
+#        content = blob.download_as_string(client=None)
 
         # Decode and load JSON data
-        rating_data = json.loads(content)
+#        rating_data = json.loads(content)
 
         # Update rating_store with new data
-        rating_store = rating_data
-        selected_books = list(rating_store.keys())
+#        rating_store = rating_data
+#        selected_books = list(rating_store.keys())
         
-        return rating_store, selected_books, {'display': 'none'}
-    except Exception as e:
-        return {}, [], {'display': 'block', 'fontSize': 15, 'color': 'red'}
+#        return rating_store, selected_books, {'display': 'none'}
+#    except Exception as e:
+#        return {}, [], {'display': 'block', 'fontSize': 15, 'color': 'red'}
           
    
 # Callback to store the users selections
-@app.callback(
-    Output('rating_store', 'data', allow_duplicate=True),
-    [Input('save_ratings_button', 'n_clicks')],
-    [State('user_id_input', 'value'), 
-     State('rating_store', 'data')],
-     prevent_initial_call=True
-)
-def save_ratings_in_cloud(n_clicks, user_id, rating_store):
-    if n_clicks is None:
-       raise dash.exceptions.PreventUpdate
+#@app.callback(
+#    Output('rating_store', 'data', allow_duplicate=True),
+#    [Input('save_ratings_button', 'n_clicks')],
+#    [State('user_id_input', 'value'), 
+#     State('rating_store', 'data')],
+#     prevent_initial_call=True
+#)
+#def save_ratings_in_cloud(n_clicks, user_id, rating_store):
+#    if n_clicks is None:
+#       raise dash.exceptions.PreventUpdate
        
-    # Create a client of Google Cloud Storage
-    storage_client = storage.Client()
+#    # Create a client of Google Cloud Storage
+#    storage_client = storage.Client()
     # Name of the bucket of Google Cloud Storage to store the user files with their selection
-    bucket_name = "user-files-bucket"
+#    bucket_name = "user-files-bucket"
 
     # Convert the user selection into a JSON file
-    rating_store_json = json.dumps(rating_store)
+#    rating_store_json = json.dumps(rating_store)
 
     # Name of the file in Google Cloud Storage
-    blob_name = f"user_ratings_{user_id}.json"
+#    blob_name = f"user_ratings_{user_id}.json"
 
     # Get the bucket
-    bucket = storage_client.bucket(bucket_name)
+#    bucket = storage_client.bucket(bucket_name)
 
     # Create a new blob (file) in the bucket
-    blob = bucket.blob(blob_name)
+#    blob = bucket.blob(blob_name)
 
     # Upload the JSON file to Google Cloud Storage
-    blob.upload_from_string(rating_store_json)
+#    blob.upload_from_string(rating_store_json)
 
-    return rating_store
+#    return rating_store
     
 
 if __name__ == '__main__':
