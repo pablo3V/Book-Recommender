@@ -767,8 +767,8 @@ def update_rating_store(rating_values, selected_books, rating_store):
 
     # Save the dictionary of selected books
     # aquí
-    with open('rating_store.json', 'w') as f:
-            json.dump(rating_store, f)
+#    with open('rating_store.json', 'w') as f:
+#            json.dump(rating_store, f)
     
     return rating_store
 
@@ -836,9 +836,9 @@ def update_intermediate_state(app_state, rating_store):
     
         # Save the table of potential recommendations
         # aquí
-        potential_recommendations_list = potential_recommendations.to_dict(orient='records')
-        with open('potential_recommendations.json', 'w') as f:
-            json.dump(potential_recommendations_list, f)
+#        potential_recommendations_list = potential_recommendations.to_dict(orient='records')
+#        with open('potential_recommendations.json', 'w') as f:
+#            json.dump(potential_recommendations_list, f)
 
         # Update the state to indicate that the process has finished
         app_state['potential_recommendations_ongoing'] = False
@@ -1035,8 +1035,8 @@ def get_the_final_recommendations(app_state, pot_recom_json, selected_genres, ex
     # Save the table of potential recommendations
     # aquí
     recommendations_list = recommendations.to_dict(orient='records')
-    with open('recommendations.json', 'w') as f:
-        json.dump(recommendations_list, f)
+#    with open('recommendations.json', 'w') as f:
+#        json.dump(recommendations_list, f)
 
     # Crear la lista de recomendaciones para mostrar en el contenedor
     recommendations_display = []
