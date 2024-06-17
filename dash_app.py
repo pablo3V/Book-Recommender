@@ -431,10 +431,10 @@ books_genres_list = pd.read_csv("data/Books_genres_list_cleaned.csv").drop('Unna
 # Dash application
 
 # Maximum number of users with coincidences that we use
-n_users_upper_limit = 1000
+n_users_upper_limit = 500
 
 # Number of neighbours
-default_number_neighbours = 500
+default_number_neighbours = 100
 
 
 # Create a dash application
