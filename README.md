@@ -61,8 +61,49 @@ In this part of the project, we identified interesting aspects of the books data
 
 ## Part III - Collaborative Filtering
 
+Collaborative filtering is a well-known method for making recommendations, with user-based collaborative filtering being a prime example. Imagine you are looking for a new book to read but you are unsure which one to choose. If you have friends or relatives whose taste in books aligns well with yours, asking them for recommendations makes sense. This idea is the foundation of user-based collaborative filtering.
 
+Here is how it works: 
 
+1. First, you identify other users who have similar tastes to the target user based on their ratings of the same set of books. For example, if you enjoyed all of Brandon Sanderson's books, you look for users who also liked those books.
+
+2. Once you have found these similar users, you take their average ratings for books that the target user has not read yet. For instance, you check how these Brandon Sanderson fans rated other books.
+
+3. Finally, you recomment the books with the highest average ratings to the current user. 
+
+These three steps form the core of the user-based collaborative filtering algorithm.
+
+However, before implementing this algorithm, we need to restructure our data. For this method, data is typically structured such that each rox corresponds to a user and each columns corresponds to a product (a book in our scenario).
+
+We list here the main steps followed in the notebook with some comments:
+
+1. We creare a DataFrame with the ratings of the target user for which we obtained the recommendations. This ratings are merged with the original ratings,
+
+2. To make the computation less demanding and faster, we select only the users that have rated, at least, ten of the books that the target user has rated. This way, from the original 53346 users in the dataset, we only user 819 of them.
+
+3. As mentioned before, we construct a matrix with this users (and the target user) whose rows and columns correspond to users and books, respectively. However, the matrix we get has 4902534 elements, so it is better to use a sparse matrix, which only keeps the non-zero elements, leaving just 106903. This reflects the importance of using a sparse matrix here. Notice how much larger the total size of the array is compared to the number of non-zero elements, which is just the number of ratings of the selected users. Sparse arrays/matrices allow us to represent these objects without explicitly storing all the 0-valued elements. This means that if the transactional data can be loaded into memory, the sparse array will fit in memory as well.
+
+4. The sparse matrix is normalized, since normalization can help mitigating the biases of users who may have different rating scales. Some common normalization techniques are:
+
+    * **Mean-Centering** (User Mean Normalization): For each user's rating, subtract the user's average rating from each of their ratings. This helps to account for differences in user rating scales.
+
+    r_{ui}' = r_{ui} - \bar{r}_u
+
+    where r_{ui} is the original rating by user \( u \) for item \( i \), and \bar{r}_u is the average rating given by user \( u \).
+
+    * **Z-score Normalization**: This methid involves scaling the ratings based on the user's mean and standard deviation. It helps addressing both the mean and variance differences in user ratings.
+
+    r_{ui}' = (r_{ui} - \bar{r}_u) ÷ sigma_u
+
+    where sigma_u  is the standard deviation of the user's ratings.
+
+    * **Min-Max Normalization**: This technique scales the ratings to a fixed range, typically [0, 1] or [-1, 1].
+
+    r_{ui}' = (r_{ui} - \min(r_u)) ÷ (\max(r_u) - \min(r_u))
+
+    where \min(r_u) and \max(r_u) are the minimum and maximum ratings given by user \( u \), respectively.
+
+5. Find similar users. For all the users with at least 10 coincidences, we calculate the similarity of their ratings with the target user's ratings. Among the possibilities to calculate the similarities, the cosine similarity and Pearson's correlation coefficient are the most popular.
 
 
 
