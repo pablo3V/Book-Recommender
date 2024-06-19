@@ -77,15 +77,13 @@ Before implementing this algorithm, we need to restructure our data. For this me
 
 ### Steps Followed in the Notebook
 
-1. **Create a DataFrame with Target User Rating**: 
+1. **Create a DataFrame with Target User Rating**: We creare a DataFrame with the ratings of the target user for whom we are obtaining recommendations. These ratings are merged with the original ratings.
 
-    We creare a DataFrame with the ratings of the target user for which we obtained the recommendations. This ratings are merged with the original ratings,
+2. **Select Relevant Users**: To make the computation less demanding and faster, we select only the users that have rated at least ten of the books that the target user has rated. This way, from the original 53346 users in the dataset, we use only 819 of them.
 
-2. To make the computation less demanding and faster, we select only the users that have rated, at least, ten of the books that the target user has rated. This way, from the original 53346 users in the dataset, we only user 819 of them.
+3. **Construct User-Book Matrix**: We construct a matrix with these users (and the target user) where rows and columns correspond to users and books, respectively. However, the matrix we get has 4902534 elements, so it is better to use a sparse matrix, which only keeps the non-zero elements, leaving just 106903. This reflects the importance of using a sparse matrix. Notice how much larger the total size of the array is compared to the number of non-zero elements, which is just the number of ratings of the selected users. Sparse arrays/matrices allow us to represent these objects without explicitly storing all the 0-valued elements. This means that if the transactional data can be loaded into memory, the sparse array will fit in memory as well.
 
-3. As mentioned before, we construct a matrix with this users (and the target user) whose rows and columns correspond to users and books, respectively. However, the matrix we get has 4902534 elements, so it is better to use a sparse matrix, which only keeps the non-zero elements, leaving just 106903. This reflects the importance of using a sparse matrix here. Notice how much larger the total size of the array is compared to the number of non-zero elements, which is just the number of ratings of the selected users. Sparse arrays/matrices allow us to represent these objects without explicitly storing all the 0-valued elements. This means that if the transactional data can be loaded into memory, the sparse array will fit in memory as well.
-
-4. The sparse matrix is normalized, since normalization can help mitigating the biases of users who may have different rating scales. Some common normalization techniques are:
+4. **Normalize the Sparse Matrix**: The sparse matrix is normalized since normalization can help mitigate the biases of users who may have different rating scales. Some common normalization techniques are:
 
     * **Mean-Centering** (User Mean Normalization): For each user's rating, subtract the user's average rating from each of their ratings. This helps to account for differences in user rating scales.
 
@@ -93,7 +91,7 @@ Before implementing this algorithm, we need to restructure our data. For this me
 
         where r_{ui} is the original rating by user \( u \) for item \( i \), and \bar{r}_u is the average rating given by user \( u \).
 
-    * **Z-score Normalization**: This methid involves scaling the ratings based on the user's mean and standard deviation. It helps addressing both the mean and variance differences in user ratings.
+    * **Z-score Normalization**: This method involves scaling the ratings based on the user's mean and standard deviation. It helps address both the mean and variance differences in user ratings.
 
         r_{ui}' = (r_{ui} - \bar{r}_u) ÷ sigma_u
 
@@ -105,9 +103,12 @@ Before implementing this algorithm, we need to restructure our data. For this me
 
         where \min(r_u) and \max(r_u) are the minimum and maximum ratings given by user \( u \), respectively.
 
-5. Find similar users. For all the users with at least 10 coincidences, we calculate the similarity of their ratings with the target user's ratings. Among the possibilities to calculate the similarities, the cosine similarity and Pearson's correlation coefficient are the most popular. This step can be done either manually by coding everything step by step (as done in 'Step 2.1. Find similar users' of the notebook), or we can use a predifined function to get the similar users. This was done in 'Step 2.2. Find similar users - KNN algorithm', where we used the function 'NearestNeighbors' from sklearn.
+5. **Find Similar Users**: For all the users with at least 10 common ratings, we calculate the similarity of their ratings with the target user's ratings. Among the methods to calculate similarities, the cosine similarity and Pearson's correlation coefficient are the most popular. This step can be done either manually by coding everything step-by-step (as done in 'Step 2.1. Find similar users' of the notebook), or we can use a predefined function to get the similar users. This was done in 'Step 2.2. Find similar users - KNN algorithm', where we used the function 'NearestNeighbors' from sklearn.
 
-6. For the recommendations, we consider the books that the similar users have read but the target user has not yet read. We then compute the average rating for each of these books based on the ratings from these similar users. To make the average ratings more reliable, we will only include books that have been rated by at least 10 users. This process helps identify books that align with the target user's taste. 
+6. **Generate Recommendations**: For the recommendations, we consider the books that the similar users have read but the target user has not yet read. We then compute the average rating for each of these books based on the ratings from these similar users. To make the average ratings more reliable, we will only include books that have been rated by at least 10 users. This process helps identify books that align with the target user's taste. 
+
+
+## Part IV - Dash Application
 
 
 
