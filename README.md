@@ -89,19 +89,19 @@ We list here the main steps followed in the notebook with some comments:
 
         r_{ui}' = r_{ui} - \bar{r}_u
 
-    where r_{ui} is the original rating by user \( u \) for item \( i \), and \bar{r}_u is the average rating given by user \( u \).
+        where r_{ui} is the original rating by user \( u \) for item \( i \), and \bar{r}_u is the average rating given by user \( u \).
 
     * **Z-score Normalization**: This methid involves scaling the ratings based on the user's mean and standard deviation. It helps addressing both the mean and variance differences in user ratings.
 
-    r_{ui}' = (r_{ui} - \bar{r}_u) ÷ sigma_u
+        r_{ui}' = (r_{ui} - \bar{r}_u) ÷ sigma_u
 
-    where sigma_u  is the standard deviation of the user's ratings.
+        where sigma_u  is the standard deviation of the user's ratings.
 
     * **Min-Max Normalization**: This technique scales the ratings to a fixed range, typically [0, 1] or [-1, 1].
 
-    r_{ui}' = (r_{ui} - \min(r_u)) ÷ (\max(r_u) - \min(r_u))
+        r_{ui}' = (r_{ui} - \min(r_u)) ÷ (\max(r_u) - \min(r_u))
 
-    where \min(r_u) and \max(r_u) are the minimum and maximum ratings given by user \( u \), respectively.
+        where \min(r_u) and \max(r_u) are the minimum and maximum ratings given by user \( u \), respectively.
 
 5. Find similar users. For all the users with at least 10 coincidences, we calculate the similarity of their ratings with the target user's ratings. Among the possibilities to calculate the similarities, the cosine similarity and Pearson's correlation coefficient are the most popular.
 
