@@ -73,11 +73,11 @@ Here is how it works:
 
 These three steps form the core of the user-based collaborative filtering algorithm.
 
-However, before implementing this algorithm, we need to restructure our data. For this method, data is typically structured such that each rox corresponds to a user and each columns corresponds to a product (a book in our scenario).
+Before implementing this algorithm, we need to restructure our data. For this method, data is typically structured such that each row corresponds to a user and each column corresponds to a product (a book in our scenario).
 
-We list here the main steps followed in the notebook with some comments:
+### Steps Followed in the Notebook
 
-1. We creare a DataFrame with the ratings of the target user for which we obtained the recommendations. This ratings are merged with the original ratings,
+1. **Create a DataFrame with Target User Rating**: We creare a DataFrame with the ratings of the target user for which we obtained the recommendations. This ratings are merged with the original ratings,
 
 2. To make the computation less demanding and faster, we select only the users that have rated, at least, ten of the books that the target user has rated. This way, from the original 53346 users in the dataset, we only user 819 of them.
 
@@ -103,7 +103,9 @@ We list here the main steps followed in the notebook with some comments:
 
         where \min(r_u) and \max(r_u) are the minimum and maximum ratings given by user \( u \), respectively.
 
-5. Find similar users. For all the users with at least 10 coincidences, we calculate the similarity of their ratings with the target user's ratings. Among the possibilities to calculate the similarities, the cosine similarity and Pearson's correlation coefficient are the most popular. This step can be done either manually by coding everything step by step (as done in 'Step 2.1. Find similar users' of the notebook), or we can use a predifined function to get the similar users. This was done in 'Step 2.2. Find similar users - KNN algorithm'. 
+5. Find similar users. For all the users with at least 10 coincidences, we calculate the similarity of their ratings with the target user's ratings. Among the possibilities to calculate the similarities, the cosine similarity and Pearson's correlation coefficient are the most popular. This step can be done either manually by coding everything step by step (as done in 'Step 2.1. Find similar users' of the notebook), or we can use a predifined function to get the similar users. This was done in 'Step 2.2. Find similar users - KNN algorithm', where we used the function 'NearestNeighbors' from sklearn.
+
+6. For the recommendations, we consider the books that the similar users have read but the target user has not yet read. We then compute the average rating for each of these books based on the ratings from these similar users. To make the average ratings more reliable, we will only include books that have been rated by at least 10 users. This process helps identify books that align with the target user's taste. 
 
 
 
