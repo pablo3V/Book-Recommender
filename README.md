@@ -103,7 +103,7 @@ We list here the main steps followed in the notebook with some comments:
 
         where \min(r_u) and \max(r_u) are the minimum and maximum ratings given by user \( u \), respectively.
 
-5. Find similar users. For all the users with at least 10 coincidences, we calculate the similarity of their ratings with the target user's ratings. Among the possibilities to calculate the similarities, the cosine similarity and Pearson's correlation coefficient are the most popular.
+5. Find similar users. For all the users with at least 10 coincidences, we calculate the similarity of their ratings with the target user's ratings. Among the possibilities to calculate the similarities, the cosine similarity and Pearson's correlation coefficient are the most popular. This step can be done either manually by coding everything step by step (as done in 'Step 2.1. Find similar users' of the notebook), or we can use a predifined function to get the similar users. This was done in 'Step 2.2. Find similar users - KNN algorithm'. 
 
 
 
