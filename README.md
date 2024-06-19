@@ -87,7 +87,7 @@ We list here the main steps followed in the notebook with some comments:
 
     * **Mean-Centering** (User Mean Normalization): For each user's rating, subtract the user's average rating from each of their ratings. This helps to account for differences in user rating scales.
 
-    r_{ui}' = r_{ui} - \bar{r}_u
+        r_{ui}' = r_{ui} - \bar{r}_u
 
     where r_{ui} is the original rating by user \( u \) for item \( i \), and \bar{r}_u is the average rating given by user \( u \).
 
