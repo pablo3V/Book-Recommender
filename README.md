@@ -186,7 +186,7 @@ Note: If you encounter issues as described here: [Gcloud App Deploy Error](https
 gcloud app browse
 ```
 
-    In our case, it is: [https://book-recommendations-dash.ew.r.appspot.com](https://book-recommendations-dash.ew.r.appspot.com)
+In our case, it is: [https://book-recommendations-dash.ew.r.appspot.com](https://book-recommendations-dash.ew.r.appspot.com)
 
 
 
