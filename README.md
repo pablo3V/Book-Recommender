@@ -166,16 +166,16 @@ With these considerations in mind, we followed the steps outlined in this [guide
 gcloud config get-value project
 ```
 
-    to check the active project in gcloud. You can change the project with:
+to check the active project in gcloud. You can change the project with:
 
 ```sh
 gcloud config set project project-id
 ```
 
-    Finally, deploy the app:
+Finally, deploy the app:
 
 ```sh
-    gcloud app deploy
+gcloud app deploy
 ```
 
 Note: If you encounter issues as described here: [Gcloud App Deploy Error](https://stackoverflow.com/questions/64274811/gcloud-app-deploy-error-response-13-failed-to-create-cloud-build-invalid-buc), resolve them and re-run the command.
@@ -186,7 +186,7 @@ Note: If you encounter issues as described here: [Gcloud App Deploy Error](https
 gcloud app browse
 ```
 
-    In our case, it is:
+In our case, it is:
 
 [https://book-recommendations-dash.ew.r.appspot.com](https://book-recommendations-dash.ew.r.appspot.com)
 
