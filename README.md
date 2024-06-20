@@ -110,6 +110,21 @@ Before implementing this algorithm, we need to restructure our data. For this me
 
 ## Part IV - Dash Application
 
+In this final part of the project, we built a web application using Dash. The application follows the same steps outlined in the previous part. Note that several functions are defined in the Python files in the [my_functions](my_functions/) folder.
+
+The layout of the Dash application is divided into four sections:
+
+1. **The Initial Explanation**: This section provides a brief overview of the program.
+
+2. **The Book Selection**: This is the first step to getting personalized book recommendations. Here, the users indicate which books they have previously read and and their ratings on a scale from 1 to 5. To do this, they simply write the name of the books in the dropdown menu and select the appropriate number of stars for their ratings. If they want to remove a selection, they have to click on the 'x' on the left side of the book cover. Additionally, the users can save their book selection or load a previously saved one by indicating a user ID.
+
+3. **The Recommendations Process**: This is an intermediate section where the users wait while their personalized recommendations are being generated.
+
+4. **The Final Recommendations**: In this last part of the program, the recommendations are displayed at the bottom of the page. The users can select how many recommendations to display, ranging from 1 to 20. Additionally, the users can specify genre restrictions for the recommendations. It is possible to include only books of certain genres or exclude books based on a genre selection. 
+
+    Note that the genres listed in the dropdowns depend on the genres of the potential book recommendations for each user. Each time the potential recommendations change due to a genre specification, the dropdowns are updated to include only the relevant genres.
+
+
 
 
 

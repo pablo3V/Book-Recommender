@@ -1,8 +1,8 @@
 .dropdown-hide-selected .Select-value-icon {
-    display: none;  /* Oculta las 'x' de las selecciones */
+    display: none;  /* Hide the 'x' of the selections in the first dropdown */
 }
 
 .dropdown-hide-selected .Select-value-label {
-    display: none;  /* Oculta las etiquetas de las selecciones */
+    display: none;  /* Hide the labels of the selections in the first dropdown */
 }
 
