@@ -270,3 +270,4 @@ def knn_model(csr_matrix, users, target_user, number_neighbours, ratings, exclud
     
     
 The difference between version is that we only use the ratings matrix in CSV format.
+

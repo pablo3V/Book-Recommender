@@ -83,19 +83,19 @@ def selected_users_df(ratings_df, target_books, n_max, target_user):
 
 # The new version of the function takes into account only the books that the target user
 # has rated. 
-# In my opinion, what is really important is that the users have coincidences in the books 
-# the target user has rated, and I do not care about the other books. For example:
+# In our opinion, what is really important is that the users have coincidences in the books 
+# the target user has rated, and we do not care about the other books. For example:
 # 
 # target user has rated N books with some ratings.
 # user_1 has rated the same N books with the same ratings, plus 1 additional book
 # user_2 has rated the same N books with the same ratings, plus 1000 additional books
 #
-# Obviously, the user_1 will be way closer to the target_user, according to the KNN algorithm,
+# The user_1 will be way closer to the target_user, according to the KNN algorithm,
 # than user_2, despite having the same ratings on the important N books. This is because the 
 # dimensionality of the space matters. 
 #
-# Then, I think it is better to consider the target_books, not only because computationally is
-# highle cheaper, but also because it makes more sense to me.
+# Then, we think it is better to consider the target_books, not only because computationally is
+# highly cheaper, but also because it makes more sense to us.
 
 def get_users_matrix(ratings, target_books):
     # Creating the matrix with users and books

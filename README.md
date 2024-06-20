@@ -123,61 +123,77 @@ The layout of the Dash application is divided into four sections:
 4. **The Final Recommendations**: In this last part of the program, the recommendations are displayed at the bottom of the page. The users can select how many recommendations to display, ranging from 1 to 20. Additionally, the users can specify genre restrictions for the recommendations. It is possible to include only books of certain genres or exclude books based on a genre selection. 
 
     Note that the genres listed in the dropdowns depend on the genres of the potential book recommendations for each user. Each time the potential recommendations change due to a genre specification, the dropdowns are updated to include only the relevant genres.
+    
+**Disclaimer**: There is still work to be done regarding the application's appearance. 
 
+### Dash Application Using Google Cloud Platform
 
+#### Important Considerations 
 
+Once the Dash application is ready, we can deploy it online using Google Cloud Platform (GCP). Since we are using the free version, resources are limited, and certain considerations need to be taken into account:
 
+- **Fewer Users with Coincidences**: Compared to the original Dash app, it is better to consider fewer users with coincidences with the target user. We set `n_users_upper_limit = 2000`.
 
+- **Optimizing Potential Recommendations**: To speed up the process of generating potential recommendations, we construct the users-books matrix using only the books that the target user has rated. This significantly reduces the time required to create the matrix. This approach focuses on the importance of users sharing ratings on the same books as the target user. For example:
 
+    * If the target user has rated N books, and user_1 has rated the same N books with the same ratings plus 1 additional book, while user_2 has rated the same N books with the same ratings plus 1000 additional books, user_1 will be closer to the target user according to the KNN algorithm. This is because the dimensionality of the space matters. 
+    
+    Although initially considered for the GCP version, this approach was implemented in the original Dash application as well.
+    
+- **Skipping `update_recommendations()` Function**: The function `update_recommendations()` is not used in the GCP app version because it causes the app to freeze and never return the recommendations. This function is intended to clean the potential recommendations by ensuring the user is recommended the next volume in a saga they have started (or the initial volume if they have not read anything), rather than random volumes out of order. Without this function, the user might get recommended volumes out of sequence.
+    
+- **Save/Load Book Selections Disabled**: Although implemented, the GCP version cannot save or load book selections due to resource constraints. These features work but take too long to compile, so the code is commented out.
 
+#### Implementation 
 
+With these considerations in mind, we followed the steps outlined in this [guide](https://datasciencecampus.github.io/deploy-dash-with-gcp/) to implement the GCP application. Here is a summary:
 
+1. **Create your Dash Application**: Ensure the application runs locally and that you have the following files in the directory:
 
+    * **main.py**: The Dash application and all the required functions in the same file.
+    * **app.yaml*: Used to run the Dash app on GCP using gunicorn
+    * **requirements.txt**: Includes all the packages needed to run the Dash app (make sure to include gunicorn).
 
+2. **Create a Project on Google Cloud Platform**: Create a new project on GCP.
 
-The funcion update_recommendations() is not used in the gcloud app version. This is due to the fact that, if done, the app freezes and never gives the recommendations.
+3. **Assign Project Ownership**: From 'Project info' -> 'Add people to this project', make yourself the owner of the project.
 
+4. **Install gcloud**: Follow the indications here: [Install Google Cloud SDK](https://cloud.google.com/sdk/docs/install-sdk?hl=es-419)
 
+5. **Deploy Your Application Using gcloud Command Line Tool**: In the directory where you have cloned your GitHub repository, run:
 
-
-## Dash application using Google Cloud Platform (GCP)
-
-I followed the steps indicated here: https://datasciencecampus.github.io/deploy-dash-with-gcp/
-
-To sum up:
-
-1. Create your Dash Application: Once the application runs locally, make sure that you have the following files in the directory:
-
-- main.py: the Dash application
-- app.yaml: used to run the Dash app on GCP using gunicorn
-- requirements.txt: includes all the packages needed to run the Dash app (make sure to include gunicorn)
-
-2. Make a Project on Google Cloud Platform: Create a new project.
-
-3. Make yourself the owner of the project: This can be done from 'Project info' -> 'Add people to this project'
-
-4. Install gcloud: Follow the indications here: https://cloud.google.com/sdk/docs/install-sdk?hl=es-419
-
-5. Deploy your Application using gcloud command line tool: In the directory where you have cloned your github repository, run the command:
-
+```sh
 gcloud config get-value project
+```
 
-to check which project is active in gcloud. You can change the project with the command:
+to check the active project in gcloud. You can change the project with:
 
+```sh
 gcloud config set project project-id
+```
 
 Finally, deploy the app:
 
+```sh
 gcloud app deploy
+```
 
-Note: I had the problem stated here: https://stackoverflow.com/questions/64274811/gcloud-app-deploy-error-response-13-failed-to-create-cloud-build-invalid-buc
+Note: If you encounter issues as described here: [Gcloud App Deploy Error](https://stackoverflow.com/questions/64274811/gcloud-app-deploy-error-response-13-failed-to-create-cloud-build-invalid-buc), resolve them and re-run the command.
 
-Once it is solved, run the command again.
+6. **Access the application**: Access the URL of your application via:
 
-6. You can acces the url of your application via:
-
+```sh
 gcloud app browse
+```
 
-In my case, it is:
+In our case, it is:
 
-https://book-recommendations-dash.ew.r.appspot.com
+[https://book-recommendations-dash.ew.r.appspot.com](https://book-recommendations-dash.ew.r.appspot.com)
+
+
+
+
+
+
+
+

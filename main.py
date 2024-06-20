@@ -8,25 +8,21 @@
 
 # Libraries
 
-import pandas as pd
-import numpy as np
-import ast
-import itertools
-import re
+import pandas as pd      # pandas is used for data manipulation and analysis, providing data structures like DataFrames.
+import numpy as np       # numpy is used for numerical operations on large, multi-dimensional arrays and matrices.
+import ast               # ast is used for processing trees of the Python abstract syntax grammar.
+import itertools         # itertools is used for creating efficient iterators for looping.
+import re                # re provides regular expression matching operations in strings.
+import os                # os is used for interacting with the operating system, including file and directory operations.
+from io import StringIO  # StringIO is used for reading and writing strings as file objects.
+import json              # json is used for parsing and generating JSON (JavaScript Object Notation) data.
 
-from scipy.sparse import csr_matrix
-from sklearn.neighbors import NearestNeighbors
-from io import StringIO
+from scipy.sparse import csr_matrix             # csr_matrix is used for creating compressed sparse row matrices, which are efficient for arithmetic and matrix operations on sparse data.
+from sklearn.neighbors import NearestNeighbors  # NearestNeighbors is used for finding the nearest neighbors of a point in a dataset.
 
-import os
-
-import dash
-from dash import dcc, html, Input, Output, State, ALL
-import dash_grocery
-
-import json
-
-from google.cloud import storage
+import dash                                            # dash is a framework for building web applications with Python.
+from dash import dcc, html, Input, Output, State, ALL  # dcc (Dash Core Components) and html (Dash HTML Components) are used to create interactive web applications. Input, Output, State, and ALL are used for callback functions in Dash.
+import dash_grocery                                    # dash_grocery is a Dash component library for building grocery list applications.
 
 #######################################################################################################
 

@@ -64,8 +64,8 @@ def ordinal_number(number):
 #                                                                                         #
 #                                  update_recommendations                                 #
 #                                                                                         #
-# Function to clean the recommendations.                                                  #
-# If there is a recommendation of a volume of a saga, we check if the user has read sny   #
+# Function to clean the potential recommendations.                                        #
+# If there is a recommendation of a volume of a saga, we check if the user has read any   #
 # volume. If so, we recommend the volume that follows inmediatedly the one that the user  #
 # has last read. If not, we recommend the first volume.                                   #
 #                                                                                         #
