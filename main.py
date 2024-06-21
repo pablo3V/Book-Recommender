@@ -448,24 +448,26 @@ server = app.server
 # Create an app layout
 app.layout = html.Div([
     dcc.Store( # Store to maintain app state
-        id='app_state', 
+        id='app_state',
         data={'initial_explanation_ongoing': True,
               'book_selection_ongoing': False,
               'potential_recommendations_ongoing': False,
               'final_recommendations_ongoing': False}
-    ),  
-    dcc.Store( # Store to store the ratings 
+    ),
+    dcc.Store( # Store to store the ratings
         id='rating_store'
     ),
     dcc.Store(
         id='potential_recommendations_df'
-    ), 
+    ),
     #
     # Initial explanation
     #
     html.Div([
         html.H1("Book Recommendation System"),
-        html.P("Welcome to the books recommender! As the name indicates, here you can have book recommendations after following a few (straightforward) steps."),
+        html.P("After finishing a captivating book, it is common to experience a sense of loss, as if saying goodbye to a friend. The search for a good book to fill that void can be intimidating, with the worry that nothing else will live up to its predecessor. This is where an application designed to recommend books can offer a beacon of hope in the form of carefully selected recommendations."),
+        html.P("Imagine a program that understands your reading preferences, knows your favorite genres and authors, and can recommend titles with captivating storytelling. Such an app could become a trusted companion for book lovers, making the transition from one book to the next simpler and more satisfying. This is precisely what this recommender aims to achieve."),
+        html.P("Welcome to the books recommender! Here you can have book recommendations after following a few (straightforward) steps."),
         html.P("When you are ready to start, press the button below."),
         html.Button("Start the program!", id="start_book_selection_button"),
     ], id='initial_explanation', style={'display': 'block'}),
@@ -474,12 +476,13 @@ app.layout = html.Div([
     #
     html.Div([
         html.H1("Book selection"),
-        html.P("If you have previously saved a selection or want to save your current one, you can enter your ID to load it."),
+        html.P("This is the first step to getting your personalized book recommendations. Here, you need to tell the program which books you have previously read and how you rate them on a scale from 1 to 5. To do this, simply write the name of the books in the dropdown menu below and select the appropriate number of stars for your rating. If you want to remove a selection, click on the 'x' on the left side of the book cover."),
+        html.P("If you have previously saved a selection or want to save your current one, you can enter your ID to load or save it."),
         dcc.Input(id='user_id_input', type='text', placeholder='Enter your user ID.'),
         html.Button("Load Ratings", id="load_ratings_button"),
-        html.P('That user ID is not in our system. If it is your first time here, you can use this ID to save your first selection. Otherwise, try again with a valid value.', 
+        html.P('That user ID is not in our system. If it is your first time here, you can use this ID to save your first selection. Otherwise, try again with a valid value.',
                id='nonexistent_userID', style={'display': 'none'}),
-        html.P("Choose as many books as you want from the list and rate them. Select at least one."),
+        html.P("Choose as many books as you want from the list and rate them. Please, select at least one."),
         dcc.Dropdown(
             id='dropdown_book_titles',
             options=[
@@ -487,28 +490,28 @@ app.layout = html.Div([
             ],
             multi=True, # Allow multiple selection
             placeholder="Select books...",
-            className='dropdown-hide-selected',
+            className='dropdown-hide-selected', # This is not to show the selections in the dropdown. The file with the styles is the assets folder
             style={'display': 'block'} # Default style to display the dropdown
         ),
-        html.Button("Save Ratings", id="save_ratings_button"),
+        html.Button("Save Ratings", id="save_ratings_button", style={'margin-top': '15px'}),
         html.Button("Finish selection", id="finish_book_selection_button"),  # Button to finish selection
         html.P(
             "No book selected! Please select at least one book.",
-            id='text_no_select', 
+            id='text_no_select',
             style={'display': 'none'}
         ),
-        html.Div(id='selected_books_container'), # Container to show the selected books       
+        html.Div(id='selected_books_container'), # Container to show the selected books
     ], id='book_selection', style={'display': 'none'}),
     #
     # Recommender program
-    # 
+    #
     html.Div([
         html.H1("Obtaining your recommendations"),
         html.P('Wait while the recommendations are obtained...')
-    ], id='potential_recommendations_program', style={'display': 'none'}), 
+    ], id='potential_recommendations_program', style={'display': 'none'}),
     #
     # Final recommendations
-    # 
+    #
     html.Div([
             html.Div([
                 html.H1("Here are your recommendations!"),
@@ -525,13 +528,13 @@ app.layout = html.Div([
             ]),
             html.P('If you want your recommendations to satisfy any genre selection, please, select the genres in the dropdown below.'),
             html.Div([
-                html.P('Do you want the recommendations to include all the selected genres or just any of them?', 
+                html.P('Do you want the recommendations to include all the selected genres or just any of them?',
                        style={'margin-left': '30px'}),
                 html.Button("All", id="include_all_genres", n_clicks=0, style={'margin-left': '30px', 'margin-right': '15px'}),
                 html.Button("Any", id="include_any_genres", n_clicks=0),
                 dcc.Store(
-                    id='genre_button_state', 
-                    data={'include_all_genres': False, 
+                    id='genre_button_state',
+                    data={'include_all_genres': False,
                           'include_any_genres': True,
                           'have_they_changed': False}
                 ),
@@ -545,7 +548,7 @@ app.layout = html.Div([
             ])
         ], style={'display': 'block'}),
         html.Div([
-            html.P("If you want your recommendations to exclude any genre selection, please, select the genres in the dropdown below."),
+            html.P("If you want your recommendations to exclude any genre selection, please, select the genres in the dropdown below.", style={'margin-left': '30px'}),
             html.Div([
                 dcc.Dropdown(
                     id='dropdown_exclude_genres',
@@ -556,14 +559,15 @@ app.layout = html.Div([
         ], style={'display': 'block'}),
         html.P("Note: Both dropdowns only include genres that are present in your recommendations."),
         html.P(
-            "No recommendations available with your genre selection. Please, change your choice.", 
-            id='text_no_recommendations', 
+            "No recommendations available with your genre selection. Please, change your choice.",
+            id='text_no_recommendations',
             style={'display': 'none'}
         ),
         html.H2('Your recommendations:'),
         html.Div(id='recommended_books_container')
     ], id='final_recommendations', style={'display': 'none'})
 ])
+
 
 
 ###############################################################################
