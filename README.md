@@ -15,8 +15,8 @@ The project is split in several parts:
 
 - [Part I - Data Wrangling](1-Data_Wrangling.ipynb)
 - [Part II - Exploratory Data Analysis (EDA)](2-EDA.ipynb)
-- [Part III - Collaborative Filtering](3-Model.ipynb)
-- [Part IV - Dash Application](4-Dash.ipynb)
+- [Part III - Collaborative Filtering](3-Collaborative_Filtering.ipynb)
+- [Part IV - Dash Application](4-Dash_Application.ipynb)
 
 
 ## Part I - Data Wrangling
