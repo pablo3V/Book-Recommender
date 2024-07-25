@@ -77,7 +77,7 @@ Before implementing this algorithm, we need to restructure our data. For this me
 
 ### Steps Followed in the Notebook
 
-1. **Create a DataFrame with Target User Rating**: We creare a DataFrame with the ratings of the target user for whom we are obtaining recommendations. These ratings are merged with the original ratings.
+1. **Create a DataFrame with Target User Rating**: We create a DataFrame with the ratings of the target user for whom we are obtaining recommendations. These ratings are merged with the original ratings.
 
 2. **Select Relevant Users**: To make the computation less demanding and faster, we select only the users that have rated at least ten of the books that the target user has rated. This way, from the original 53346 users in the dataset, we use only 819 of them.
 
